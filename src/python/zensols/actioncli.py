@@ -1,0 +1,111 @@
+import logging, sys, os
+
+from optparse import OptionParser
+from zensols.util import Config
+
+logger = logging.getLogger('zensols.actioncli')
+
+class SimpleActionCli(object):
+    """A simple action based command line interface.
+    """
+    def __init__(self, executors, invokes, config=None, version='0.1',
+                 opts={}, manditory_opts={}, environ_opts={}):
+        """Construct.
+
+        :param dict executors:
+            keys are executor names and values are
+            function that create the executor handler instance
+        :param dict invokes:
+            keys are names of in executors and values are
+            arrays with the form: [<option name>, <method name>, <usage doc>]
+        :param config: an instance of `zensols.config.Config`
+        :param str version: the version of this command line module
+        :param set opts: options to be parsed
+        :param set manditory_opts: options that must be supplied in the command
+        :param set environ_opts:
+            options to add from environment variables; each are upcased to
+            be match and retrieved from the environment but are lowercased in
+            the results param set
+        """
+        self.executors = executors
+        self.invokes = invokes
+        self.opts = opts
+        self.manditory_opts = manditory_opts
+        self.environ_opts = environ_opts
+        self.version = version
+        self.add_logging = False
+        self.config = config
+    
+    def _config_logging(self, level):
+        root = logging.getLogger()
+        map(root.removeHandler, root.handlers[:])
+        if level > 0:
+            logging.basicConfig(level=logging.WARNING)
+        elif level > 1:
+            logging.basicConfig(level=logging.INFO)
+        if level >= 2:
+            root.setLevel(logging.DEBUG)
+            logger.setLevel(logging.DEBUG)
+
+    def print_actions(self, short):
+        if short:
+            for (name, action) in __invoke__.items():
+                print(name)
+        else:
+            pad = max(map(lambda x: len(x), __invoke__.keys())) + 2
+            fmt = '%%-%ds %%s' % pad
+            for (name, action) in __invoke__.items():
+                print(fmt % (name, action[2]))
+
+    def _add_whine_option(self, parser):
+        parser.add_option('-w', '--whine', dest='whine', metavar='NUMBER',
+                          type='int', default=0, help='add verbosity to logging')
+        self.add_logging = True
+
+    def _parser_error(self, msg):
+        self.parser.error(msg)
+
+    def _default_environ_opts(self):
+        opts = {}
+        for opt in self.environ_opts:
+            opt_env = opt.upper()
+            if opt_env in os.environ:
+                opts[opt] = os.environ[opt_env]
+        logger.debug('default environment options: %s' % opts)
+        return opts
+
+    def invoke(self, args=sys.argv[1:]):
+        usage = 'usage: %prog <list|...> [options]'
+        parser = OptionParser(usage=usage, version='%prog ' + str(self.version))
+        parser.add_option('-s', '--short', dest='short',
+                          help='short output for list', action='store_true')
+        self.parser = parser
+        self.config_parser()
+        (options, args) = parser.parse_args(args)
+        if len(args) <= 0:
+            self._parser_error('missing action mnemonic')
+        action = args[0]
+        if self.add_logging: self._config_logging(options.whine)
+        if action == 'list': self.print_actions(options.short)
+        else:
+            if not action in self.invokes:
+                self._parser_error('no such action: ' + action)
+            (exec_name, meth, _) = self.invokes[action]
+            logging.debug('exec_name: %s, meth: %s' % (exec_name, meth))
+            params = vars(options)
+            def_params = self.config.options if self.config else {}
+            def_params.update(self._default_environ_opts())
+            for k,v in params.items():
+                if v == None and k in def_params:
+                    params[k] = def_params[k]
+            logger.debug('before filter: %s' % params)
+            params = {k: params[k] for k in params.keys() & self.opts}
+            for opt in self.manditory_opts:
+                if not opt in params or params[opt] == None:
+                    self._parser_error('missing option: %s' % opt)
+            exec_obj = self.executors[exec_name](params)
+            logging.debug('invoking: %s.%s' % (exec_obj, meth))
+            try:
+                getattr(exec_obj, meth)()
+            except ValueError as err:
+                self._parser_error('error {0}'.format(err))
