@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 
 import unittest, sys, os
 from zensols.actioncli import SimpleActionCli
-from zensols.util import Config
+from zensols.actioncli import Config
 
 logger = logging.getLogger('zensols.test')
 

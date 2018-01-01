@@ -1,0 +1,34 @@
+description: project configuration generated 2018-01-01 11:23:56
+source: /Users/landes/view/template/python
+template-directory: make-proj
+context:
+- property:
+    description: 'github repo name (ex: nlparse)'
+    name: project
+    value: actioncli
+- property:
+    description: 'very short few word project description (ex: A convenience based
+      tool)'
+    name: project-name
+    value: Action/Mnemonic command line library
+- property:
+    description: 'a short project descsripion (ex: This library provides generalized
+      tooling library.)'
+    name: project-description
+    value: This library intends to make command line execution and configuration easy.
+- property:
+    description: 'package namespace (ex: zensols.nlp)'
+    name: namespace
+    value: zensols.tools
+- property:
+    description: 'github user name (ex: plandes)'
+    name: user
+    value: plandes
+- property:
+    description: 'author email (ex: user@example.com)'
+    name: author-email
+    value: landes at mailc dot n e t
+- property:
+    description: 'author full name (ex: Paul Landes)'
+    name: author-name
+    value: Paul Landes

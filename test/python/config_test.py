@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest, logging, sys
-from zensols.util import Config
+from zensols.actioncli import Config
 
 logger = logging.getLogger('zneosls.config.test')
 

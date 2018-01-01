@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "zensols.actioncli",
-    packages = ['zensols', 'zensols.util'],
+    packages = ['zensols.actioncli'],
     version = '0.1',
     description = 'This library intends to make command line execution and configuration easy.',
     author = 'Paul Landes}',

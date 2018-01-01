@@ -1,7 +1,7 @@
 import logging, sys, os
 
 from optparse import OptionParser
-from zensols.util import Config
+from zensols.actioncli import Config
 
 logger = logging.getLogger('zensols.actioncli')
 
