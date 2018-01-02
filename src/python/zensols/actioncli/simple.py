@@ -39,13 +39,19 @@ class SimpleActionCli(object):
     def _config_logging(self, level):
         root = logging.getLogger()
         map(root.removeHandler, root.handlers[:])
-        if level > 0:
-            logging.basicConfig(level=logging.WARNING)
-        elif level > 1:
-            logging.basicConfig(level=logging.INFO)
-        if level >= 2:
-            root.setLevel(logging.DEBUG)
-            logger.setLevel(logging.DEBUG)
+        if level == 0:
+            levelno = logging.WARNING
+        elif level == 1:
+            levelno = logging.INFO
+        elif level == 2:
+            levelno = logging.DEBUG
+        if level <= 1:
+            fmt = '%(message)s'
+        else:
+            fmt = '%(levelname)s:%(asctime)-15s %(name)s %(message)s'
+        logging.basicConfig(format=fmt, level=levelno)
+        root.setLevel(levelno)
+        logger.setLevel(levelno)
 
     def print_actions(self, short):
         if short:
