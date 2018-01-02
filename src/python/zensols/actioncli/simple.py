@@ -9,7 +9,8 @@ class SimpleActionCli(object):
     """A simple action based command line interface.
     """
     def __init__(self, executors, invokes, config=None, version='0.1',
-                 opts={}, manditory_opts={}, environ_opts={}):
+                 opts={}, manditory_opts={}, environ_opts={},
+                 default_action=None):
         """Construct.
 
         :param dict executors:
@@ -26,6 +27,7 @@ class SimpleActionCli(object):
             options to add from environment variables; each are upcased to
             be match and retrieved from the environment but are lowercased in
             the results param set
+        :param str default_action: the action to use if non is specified (if any)
         """
         self.executors = executors
         self.invokes = invokes
@@ -35,7 +37,8 @@ class SimpleActionCli(object):
         self.version = version
         self.add_logging = False
         self.config = config
-    
+        self.default_action = default_action
+
     def _config_logging(self, level):
         root = logging.getLogger()
         map(root.removeHandler, root.handlers[:])
@@ -91,14 +94,20 @@ class SimpleActionCli(object):
         self.parser = parser
         self.config_parser()
         (options, args) = parser.parse_args(args)
-        if len(args) <= 0:
-            self._parser_error('missing action mnemonic')
-        action = args[0]
+        logger.debug('options: <%s>, args: <%s>' % (options, args))
+        if len(args) > 0:
+            action = args[0]
+        else:
+            if self.default_action == None:
+                self._parser_error('missing action mnemonic')
+            else:
+                logger.debug('using default action: %s' % self.default_action)
+                action = self.default_action
         if self.add_logging: self._config_logging(options.whine)
         if action == 'list': self.print_actions(options.short)
         else:
             if not action in self.invokes:
-                self._parser_error('no such action: ' + action)
+                self._parser_error("no such action: '%s'" % action)
             (exec_name, meth, _) = self.invokes[action]
             logging.debug('exec_name: %s, meth: %s' % (exec_name, meth))
             params = vars(options)

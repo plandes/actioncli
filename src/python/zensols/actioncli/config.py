@@ -73,7 +73,8 @@ class Config(object):
     @property
     def sections(self):
         "Return all sections."
-        return set(self._get_conf().sections())
+        secs = self._get_conf().sections()
+        if secs: return set(secs)
 
     def __str__(self):
         return str(self.options)
