@@ -6,13 +6,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 import unittest, sys, os
-from zensols.actioncli import SimpleActionCli
-from zensols.actioncli import Config
+from zensols.actioncli import SimpleActionCli, Config
 
 logger = logging.getLogger('zensols.test')
 
 class AppTester(object):
-    def __init__(self, some_opt_name):
+    def __init__(self, config, some_opt_name):
         self.some_opt_name = some_opt_name
 
     def startaction(self):

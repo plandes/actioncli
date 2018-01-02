@@ -55,17 +55,17 @@ class SimpleActionCli(object):
 
     def print_actions(self, short):
         if short:
-            for (name, action) in __invoke__.items():
+            for (name, action) in self.invokes.items():
                 print(name)
         else:
-            pad = max(map(lambda x: len(x), __invoke__.keys())) + 2
+            pad = max(map(lambda x: len(x), self.invokes.keys())) + 2
             fmt = '%%-%ds %%s' % pad
-            for (name, action) in __invoke__.items():
+            for (name, action) in self.invokes.items():
                 print(fmt % (name, action[2]))
 
-    def _add_whine_option(self, parser):
+    def _add_whine_option(self, parser, default=0):
         parser.add_option('-w', '--whine', dest='whine', metavar='NUMBER',
-                          type='int', default=0, help='add verbosity to logging')
+                          type='int', default=default, help='add verbosity to logging')
         self.add_logging = True
 
     def _parser_error(self, msg):
@@ -79,6 +79,9 @@ class SimpleActionCli(object):
                 opts[opt] = os.environ[opt_env]
         logger.debug('default environment options: %s' % opts)
         return opts
+
+    def _init_executor(self, executor):
+        pass
 
     def invoke(self, args=sys.argv[1:]):
         usage = 'usage: %prog <list|...> [options]'
@@ -109,7 +112,9 @@ class SimpleActionCli(object):
             for opt in self.manditory_opts:
                 if not opt in params or params[opt] == None:
                     self._parser_error('missing option: %s' % opt)
+            params['config'] = self.config
             exec_obj = self.executors[exec_name](params)
+            self._init_executor(exec_obj)
             logging.debug('invoking: %s.%s' % (exec_obj, meth))
             try:
                 getattr(exec_obj, meth)()
