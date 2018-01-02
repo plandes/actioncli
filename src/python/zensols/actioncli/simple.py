@@ -128,4 +128,4 @@ class SimpleActionCli(object):
             try:
                 getattr(exec_obj, meth)()
             except ValueError as err:
-                self._parser_error('error {0}'.format(err))
+                self._parser_error(format(err))
