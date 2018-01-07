@@ -20,13 +20,17 @@ class Config(object):
         self.default_section = default_section
         self.robust = robust
 
+    def _create_config_parser(self):
+        "Factory method to create the ConfigParser."
+        return configparser.ConfigParser()
+
     def _get_conf(self):
         "Load the configuration file."
         if not hasattr(self, '_conf'):
             cfile = self.config_file
             logger.debug('loading config %s' % cfile)
             if os.path.isfile(cfile):
-                conf = configparser.ConfigParser()
+                conf = self._create_config_parser()
                 conf.read(os.path.expanduser(cfile))
             else:
                 if self.robust:
@@ -37,7 +41,7 @@ class Config(object):
             self._conf = conf
         return self._conf
 
-    def get_options(self, section='default', opt_keys=None):
+    def get_options(self, section='default', opt_keys=None, vars=None):
         """
         Get all options for a section.  If **opt_keys** is given return
         only options with those keys.
@@ -52,17 +56,17 @@ class Config(object):
         else:
             opt_keys = set(opt_keys).intersection(set(conf.options(section)))
         for option in opt_keys:
-            opts[option] = conf.get(section, option)
+            opts[option] = conf.get(section, option, vars=vars)
         return opts
 
-    def get_option(self, name, section=None):
+    def get_option(self, name, section=None, vars=None):
         """
         Return an option from **section** with **name**.  Parameter
         **section** defaults to constructor's **default_section**.
         """
         if section == None:
             section = self.default_section
-        opts = self.get_options(section, opt_keys=[name])
+        opts = self.get_options(section, opt_keys=[name], vars=vars)
         if opts: return opts[name]
 
     @property
