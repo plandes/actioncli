@@ -51,7 +51,7 @@ class SimpleActionCli(object):
         if level <= 1:
             fmt = '%(message)s'
         else:
-            fmt = '%(levelname)s:%(asctime)-15s %(name)s %(message)s'
+            fmt = '%(levelname)s:%(asctime)-15s %(name)s: %(message)s'
         logging.basicConfig(format=fmt, level=levelno)
         root.setLevel(levelno)
         logger.setLevel(levelno)
