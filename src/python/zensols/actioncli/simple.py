@@ -86,6 +86,9 @@ class SimpleActionCli(object):
     def _init_executor(self, executor):
         pass
 
+    def get_config(self):
+        return self.config
+
     def invoke(self, args=sys.argv[1:]):
         usage = 'usage: %prog <list|...> [options]'
         parser = OptionParser(usage=usage, version='%prog ' + str(self.version))
@@ -111,7 +114,8 @@ class SimpleActionCli(object):
             (exec_name, meth, _) = self.invokes[action]
             logging.debug('exec_name: %s, meth: %s' % (exec_name, meth))
             params = vars(options)
-            def_params = self.config.options if self.config else {}
+            config = self.get_config()
+            def_params = config.options if config else {}
             def_params.update(self._default_environ_opts())
             for k,v in params.items():
                 if v == None and k in def_params:
@@ -121,7 +125,7 @@ class SimpleActionCli(object):
             for opt in self.manditory_opts:
                 if not opt in params or params[opt] == None:
                     self._parser_error('missing option: %s' % opt)
-            params['config'] = self.config
+            params['config'] = config
             exec_obj = self.executors[exec_name](params)
             self._init_executor(exec_obj)
             logging.debug('invoking: %s.%s' % (exec_obj, meth))
