@@ -52,7 +52,10 @@ class Config(object):
             if conf == None:
                 opt_keys = {}
             else:
-                opt_keys = conf.options(section)
+                if not self.robust or conf.has_section(section):
+                    opt_keys = conf.options(section)
+                else:
+                    opt_keys = {}
         else:
             opt_keys = set(opt_keys).intersection(set(conf.options(section)))
         for option in opt_keys:
