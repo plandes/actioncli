@@ -86,7 +86,7 @@ class SimpleActionCli(object):
     def _init_executor(self, executor):
         pass
 
-    def get_config(self):
+    def get_config(self, params):
         return self.config
 
     def invoke(self, args=sys.argv[1:]):
@@ -114,7 +114,7 @@ class SimpleActionCli(object):
             (exec_name, meth, _) = self.invokes[action]
             logging.debug('exec_name: %s, meth: %s' % (exec_name, meth))
             params = vars(options)
-            config = self.get_config()
+            config = self.get_config(params)
             def_params = config.options if config else {}
             def_params.update(self._default_environ_opts())
             for k,v in params.items():
