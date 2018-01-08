@@ -21,6 +21,11 @@ class TestHelloWorld(unittest.TestCase):
         conf = Config('test-resources/config-test-nodef.conf', robust=True)
         self.assertEqual({}, conf.options)
 
+    def test_print(self):
+        conf = Config('test-resources/config-test.conf')
+        s = str(conf)
+        self.assertEqual("file: test-resources/config-test.conf, section: {'default'}", s)
+
 def main(args=sys.argv[1:]):
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()

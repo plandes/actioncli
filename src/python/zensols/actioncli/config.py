@@ -84,4 +84,4 @@ class Config(object):
         if secs: return set(secs)
 
     def __str__(self):
-        return str('file: %s, section: %s' % (self.conf_file, self.sections))
+        return str('file: %s, section: %s' % (self.config_file, self.sections))
