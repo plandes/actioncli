@@ -7,7 +7,8 @@ class Config(object):
     Application configuration utility.  This reads from a configuration and
     returns sets or subsets of options.
     """
-    def __init__(self, config_file=None, default_section='default', robust=False):
+    def __init__(self, config_file=None, default_section='default',
+                 robust=False, default_vars=None):
         """Create with a configuration file path.
 
         Keyword arguments:
@@ -19,6 +20,7 @@ class Config(object):
         self.config_file = config_file
         self.default_section = default_section
         self.robust = robust
+        self.default_vars = default_vars
 
     def _create_config_parser(self):
         "Factory method to create the ConfigParser."
@@ -46,6 +48,7 @@ class Config(object):
         Get all options for a section.  If **opt_keys** is given return
         only options with those keys.
         """
+        vars = vars if vars else self.default_vars
         conf = self._get_conf()
         opts = {}
         if opt_keys == None:
@@ -62,15 +65,20 @@ class Config(object):
             opts[option] = conf.get(section, option, vars=vars)
         return opts
 
-    def get_option(self, name, section=None, vars=None):
+    def get_option(self, name, section=None, vars=None, expect=False):
         """
         Return an option from **section** with **name**.  Parameter
         **section** defaults to constructor's **default_section**.
         """
+        vars = vars if vars else self.default_vars
         if section == None:
             section = self.default_section
         opts = self.get_options(section, opt_keys=[name], vars=vars)
-        if opts: return opts[name]
+        if opts:
+            return opts[name]
+        else:
+            if expect:
+                raise ValueError('''no option '%s' found in section %s''' % (name, section))
 
     @property
     def options(self):
