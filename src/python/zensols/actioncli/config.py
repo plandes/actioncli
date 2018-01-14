@@ -26,7 +26,8 @@ class Config(object):
         "Factory method to create the ConfigParser."
         return configparser.ConfigParser()
 
-    def _get_conf(self):
+    @property
+    def parser(self):
         "Load the configuration file."
         if not hasattr(self, '_conf'):
             cfile = self.config_file
@@ -49,7 +50,7 @@ class Config(object):
         only options with those keys.
         """
         vars = vars if vars else self.default_vars
-        conf = self._get_conf()
+        conf = self.parser
         opts = {}
         if opt_keys == None:
             if conf == None:
@@ -88,7 +89,7 @@ class Config(object):
     @property
     def sections(self):
         "Return all sections."
-        secs = self._get_conf().sections()
+        secs = self.parser.sections()
         if secs: return set(secs)
 
     def __str__(self):
