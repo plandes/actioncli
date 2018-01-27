@@ -7,14 +7,16 @@ logger = logging.getLogger('zensols.actioncli.peraction')
 class PrintActionsOptionParser(OptionParser):
     def print_help(self):
         logger.debug('print help: %s' % self.invokes)
+        logger.debug('action options: %s' % self.action_options)
         OptionParser.print_help(self)
         for action, invoke in self.invokes.items():
-            logger.debug('print action: %s' % action)
+            logger.debug('print action: %s, invoke: %s' % (action, invoke))
             if action in self.action_options:
                 opts = map(lambda x: x['opt_obj'], self.action_options[action])
                 op = OptionParser(option_list=opts)
                 #op.set_usage(optparse.SUPPRESS_USAGE)
-                op.set_usage('usage: %%prog %s [options]' % action)
+                op.set_usage('usage: %%prog %s [additional options]\n\n%s' % \
+                             (action, invoke[2].capitalize()))
                 print()
                 print()
                 op.print_help()
@@ -75,15 +77,16 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
                 if opt[2]: self.manditory_opts.add(opt_obj.dest)
 
     def _config_executor(self, oc):
-        name = oc['name']
-        invokes = {}
+        exec_name = oc['name']
         gaopts = self.action_options
         logger.debug('config opt config: %s' % oc)
         for action in oc['actions']:
             action_name = action['name']
-            meth = action['meth'] if 'meth' in action else name
+            meth = action['meth'] if 'meth' in action else action_name
             doc = action['doc'] if 'doc' in action else re.sub(r'[-_]', ' ', meth)
-            invokes[action_name] = [name, meth, doc]
+            inv = [exec_name, meth, doc]
+            logger.debug('inferred action: %s: %s' % (action, inv))
+            self.invokes[action_name] = inv
             if 'opts' in action:
                 aopts = gaopts[action_name] if action_name in gaopts else []
                 gaopts[action_name] = aopts
@@ -92,8 +95,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
                     opt_obj = self.make_option(opt[0], opt[1], **opt[3])
                     logger.debug('action opt obj: %s' % opt_obj)
                     aopts.append({'opt_obj': opt_obj, 'manditory': opt[2]})
-        self.executors[name] = oc['executor']
-        self.invokes = invokes
+        self.executors[exec_name] = oc['executor']
 
     def config_parser(self):
         parser = self.parser
