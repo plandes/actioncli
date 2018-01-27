@@ -153,7 +153,7 @@ class TestCommandOpTest(unittest.TestCase):
         global current_test
         current_test = self
 
-    def Xtest_per_action_options(self):
+    def test_per_action_options(self):
         global test_opt_gval, test_file_gval, test_args_gval, test_num_gval
         test_opt_gval = 'test1'
         test_file_gval = 'afile'
@@ -182,5 +182,4 @@ class TestCommandOpTest(unittest.TestCase):
                                       ['-n', '--num', {'dest': 'a_num_option', 'type': 'int'}]]}],
                 'global_options': [['-o', '--optname', {'dest': 'some_opt_name'}]],
                 'whine': True}]
-        #SwitchActionOptionsCli(cnf).invoke('--help'.split(' '))
         SwitchActionOptionsCli(cnf).invoke('start -o test1 -f afile another_arg'.split(' '))

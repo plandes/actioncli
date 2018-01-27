@@ -10,4 +10,4 @@ PROJ_TYPE=	python
 
 include $(if $(ZBHOME),$(ZBHOME),../zenbuild)/main.mk
 
-PY_SRC_TEST_PKGS=cmdop_test.TestCommandOpTest
+#PY_SRC_TEST_PKGS=cmdop_test.TestCommandOpTest
