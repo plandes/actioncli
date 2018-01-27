@@ -1,4 +1,4 @@
-import logging, inspect, optparse
+import logging, inspect, optparse, re
 from optparse import OptionParser
 from zensols.actioncli import SimpleActionCli
 
@@ -11,7 +11,7 @@ class PrintActionsOptionParser(OptionParser):
         for action, invoke in self.invokes.items():
             logger.debug('print action: %s' % action)
             if action in self.action_options:
-                opts = self.action_options[action]
+                opts = map(lambda x: x['opt_obj'], self.action_options[action])
                 op = OptionParser(option_list=opts)
                 #op.set_usage(optparse.SUPPRESS_USAGE)
                 op.set_usage('usage: %%prog %s [options]' % action)
@@ -23,7 +23,6 @@ class PerActionOptionsCli(SimpleActionCli):
     def __init__(self, *args, **kwargs):
         self.action_options = {}
         super(PerActionOptionsCli, self).__init__(*args, **kwargs)
-        self._log_config()
 
     def _init_executor(self, executor, config, args):
         mems = inspect.getmembers(executor, predicate=inspect.ismethod)
@@ -59,10 +58,10 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
     def __init__(self, opt_config, **kwargs):
         self.opt_config = opt_config
         super(OneConfPerActionOptionsCli, self).__init__({}, {}, **kwargs)
-        self._log_config()
 
     def _config_global(self, oc):
         parser = self.parser
+        logger.debug('global opt config: %s' % oc)
         if 'whine' in oc and oc['whine']:
             logger.debug('configuring whine option')
             self._add_whine_option(parser)
@@ -82,7 +81,9 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         logger.debug('config opt config: %s' % oc)
         for action in oc['actions']:
             action_name = action['name']
-            invokes[action_name] = [name, action['meth'], action['doc']]
+            meth = action['meth'] if 'meth' in action else name
+            doc = action['doc'] if 'doc' in action else re.sub(r'[-_]', ' ', meth)
+            invokes[action_name] = [name, meth, doc]
             if 'opts' in action:
                 aopts = gaopts[action_name] if action_name in gaopts else []
                 gaopts[action_name] = aopts
@@ -95,7 +96,6 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         self.invokes = invokes
 
     def config_parser(self):
-        self._log_config()
         parser = self.parser
         self._config_global(self.opt_config)
         for oc in self.opt_config['executors']:

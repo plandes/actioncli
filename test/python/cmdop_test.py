@@ -106,6 +106,7 @@ class TestCommandOpTest(unittest.TestCase):
         test_file_gval = 'afile'
         test_args_gval = ['another_arg']
         cnf = self.conf(False)
+        #OneConfPerActionOptionsCli(cnf).invoke(['-h'])
         OneConfPerActionOptionsCli(cnf).invoke('start -o test1 -f afile another_arg'.split(' '))
         test_opt_gval = 'test1_stop'
         test_file_gval = 'afile_stop'
