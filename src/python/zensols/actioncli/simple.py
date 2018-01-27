@@ -9,7 +9,7 @@ class SimpleActionCli(object):
     """A simple action based command line interface.
     """
     def __init__(self, executors, invokes, config=None, version='0.1',
-                 opts={}, manditory_opts={}, environ_opts={},
+                 opts=set(), manditory_opts=set(), environ_opts={},
                  default_action=None):
         """Construct.
 
@@ -83,19 +83,28 @@ class SimpleActionCli(object):
         logger.debug('default environment options: %s' % opts)
         return opts
 
-    def _init_executor(self, executor):
+    def _init_executor(self, executor, config, args):
         pass
 
     def get_config(self, params):
         return self.config
 
+    def _config_parser_for_action(self, args, parser):
+        pass
+
+    def _create_parser(self, usage):
+        return OptionParser(usage=usage, version='%prog ' + str(self.version))
+
     def invoke(self, args=sys.argv[1:]):
         usage = 'usage: %prog <list|...> [options]'
-        parser = OptionParser(usage=usage, version='%prog ' + str(self.version))
+        parser = self._create_parser(usage)
         parser.add_option('-s', '--short', dest='short',
                           help='short output for list', action='store_true')
         self.parser = parser
         self.config_parser()
+        if len(args) > 0 and args[0] in self.invokes:
+            logger.info('configuring parser on action: %s' % args[0])
+            self._config_parser_for_action(args, parser)
         (options, args) = parser.parse_args(args)
         logger.debug('options: <%s>, args: <%s>' % (options, args))
         if len(args) > 0:
@@ -127,7 +136,7 @@ class SimpleActionCli(object):
                     self._parser_error('missing option: %s' % opt)
             params['config'] = config
             exec_obj = self.executors[exec_name](params)
-            self._init_executor(exec_obj)
+            self._init_executor(exec_obj, config, args[1:])
             logging.debug('invoking: %s.%s' % (exec_obj, meth))
             try:
                 getattr(exec_obj, meth)()
