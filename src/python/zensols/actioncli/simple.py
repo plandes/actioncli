@@ -9,7 +9,7 @@ class SimpleActionCli(object):
     """A simple action based command line interface.
     """
     def __init__(self, executors, invokes, config=None, version='0.1',
-                 opts=set(), manditory_opts=set(), environ_opts={},
+                 opts=None, manditory_opts=None, environ_opts=None,
                  default_action=None):
         """Construct.
 
@@ -29,6 +29,9 @@ class SimpleActionCli(object):
             the results param set
         :param str default_action: the action to use if non is specified (if any)
         """
+        opts = opts if opts else set([])
+        manditory_opts = manditory_opts if manditory_opts else set([])
+        environ_opts = environ_opts if environ_opts else set([])
         self.executors = executors
         self.invokes = invokes
         self.opts = opts
