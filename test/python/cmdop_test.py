@@ -70,20 +70,21 @@ class TestCommandOpTest(unittest.TestCase):
         current_test = self
 
     def conf(self, mand_on=False):
-        cnf = [{'name': 'app_testor',
-                'executor': lambda params: AppTester(**params),
-                'actions': [{'name': 'start',
-                             'meth': 'startaction',
-                             'doc': 'start doc',
-                             'opts': [['-f', '--file', False, {'dest': 'a_file_name'}]]},
-                            {'name': 'stop',
-                             'meth': 'stopaction',
-                             'doc': 'stop doc',
-                             'opts': [['-x', '--xfile', False, {'dest': 'a_file_name'}],
-                                      ['-n', '--num', False, {'dest': 'a_num_option', 'type': 'int'}],
-                                      [None, '--amand_opt', mand_on, {}]]}],
-                'global_options': [['-o', '--optname', False, {'dest': 'some_opt_name'}]],
-                'whine': True}]
+        cnf = {'executors':
+               [{'name': 'app_testor',
+                 'executor': lambda params: AppTester(**params),
+                 'actions': [{'name': 'start',
+                              'meth': 'startaction',
+                              'doc': 'start doc',
+                              'opts': [['-f', '--file', False, {'dest': 'a_file_name'}]]},
+                             {'name': 'stop',
+                              'meth': 'stopaction',
+                              'doc': 'stop doc',
+                              'opts': [['-x', '--xfile', False, {'dest': 'a_file_name'}],
+                                       ['-n', '--num', False, {'dest': 'a_num_option', 'type': 'int'}],
+                                       [None, '--amand_opt', mand_on, {}]]}]}],
+               'global_options': [['-o', '--optname', False, {'dest': 'some_opt_name'}]],
+               'whine': True}
         return cnf
 
     def test_per_action_options(self):

@@ -61,12 +61,8 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         super(OneConfPerActionOptionsCli, self).__init__({}, {}, **kwargs)
         self._log_config()
 
-    def _config_executor(self, oc):
+    def _config_global(self, oc):
         parser = self.parser
-        name = oc['name']
-        invokes = {}
-        gaopts = self.action_options
-        logger.debug('config opt config: %s' % oc)
         if 'whine' in oc and oc['whine']:
             logger.debug('configuring whine option')
             self._add_whine_option(parser)
@@ -78,6 +74,12 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
                 parser.add_option(opt_obj)
                 self.opts.add(opt_obj.dest)
                 if opt[2]: self.manditory_opts.add(opt_obj.dest)
+
+    def _config_executor(self, oc):
+        name = oc['name']
+        invokes = {}
+        gaopts = self.action_options
+        logger.debug('config opt config: %s' % oc)
         for action in oc['actions']:
             action_name = action['name']
             invokes[action_name] = [name, action['meth'], action['doc']]
@@ -95,7 +97,8 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
     def config_parser(self):
         self._log_config()
         parser = self.parser
-        for oc in self.opt_config:
+        self._config_global(self.opt_config)
+        for oc in self.opt_config['executors']:
             self._config_executor(oc)
         parser.action_options = self.action_options
         parser.invokes = self.invokes
