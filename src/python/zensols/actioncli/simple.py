@@ -5,6 +5,10 @@ from zensols.actioncli import Config
 
 logger = logging.getLogger('zensols.actioncli')
 
+class ActionCliError(Exception):
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
 class SimpleActionCli(object):
     """A simple action based command line interface.
     """
@@ -138,10 +142,10 @@ class SimpleActionCli(object):
                 if not opt in params or params[opt] == None:
                     self._parser_error('missing option: %s' % opt)
             params['config'] = config
-            exec_obj = self.executors[exec_name](params)
-            self._init_executor(exec_obj, config, args[1:])
-            logging.debug('invoking: %s.%s' % (exec_obj, meth))
             try:
+                exec_obj = self.executors[exec_name](params)
+                self._init_executor(exec_obj, config, args[1:])
+                logging.debug('invoking: %s.%s' % (exec_obj, meth))
                 getattr(exec_obj, meth)()
-            except ValueError as err:
+            except ActionCliError as err:
                 self._parser_error(format(err))
