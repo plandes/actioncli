@@ -66,7 +66,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         logger.debug('global opt config: %s' % oc)
         if 'whine' in oc and oc['whine']:
             logger.debug('configuring whine option')
-            self._add_whine_option(parser)
+            self._add_whine_option(parser, default=oc['whine'])
         if 'global_options' in oc:
             for opt in oc['global_options']:
                 logger.debug('global opt: %s', opt)
@@ -82,7 +82,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         logger.debug('config opt config: %s' % oc)
         for action in oc['actions']:
             action_name = action['name']
-            meth = action['meth'] if 'meth' in action else action_name
+            meth = action['meth'] if 'meth' in action else re.sub(r'[- ]', '_', action_name)
             doc = action['doc'] if 'doc' in action else re.sub(r'[-_]', ' ', meth)
             inv = [exec_name, meth, doc]
             logger.debug('inferred action: %s: %s' % (action, inv))
