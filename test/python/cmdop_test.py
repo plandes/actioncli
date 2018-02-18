@@ -10,7 +10,7 @@ from zensols.actioncli import SimpleActionCli, Config, \
 logger = logging.getLogger('zensols.test')
 
 class AppTester(object):
-    def __init__(self, config, some_opt_name, a_file_name, a_num_option=None, amand_opt=None):
+    def __init__(self, some_opt_name, a_file_name, config=None, a_num_option=None, amand_opt=None):
         self.some_opt_name = some_opt_name
         self.a_file_name = a_file_name
         self.a_num_option = a_num_option

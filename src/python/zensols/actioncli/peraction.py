@@ -1,6 +1,6 @@
-import logging, inspect, optparse, re
+import logging, inspect, optparse, re, os
 from optparse import OptionParser
-from zensols.actioncli import SimpleActionCli
+from zensols.actioncli import SimpleActionCli, Config
 
 logger = logging.getLogger('zensols.actioncli.peraction')
 
@@ -67,6 +67,14 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         if 'whine' in oc and oc['whine']:
             logger.debug('configuring whine option')
             self._add_whine_option(parser, default=oc['whine'])
+        if 'config_option' in oc:
+            conf = oc['config_option']
+            self.config_opt_name = conf['name']
+            opt = conf['opt']
+            logger.debug('config opt: %s', opt)
+            opt_obj = self.make_option(opt[0], opt[1], **opt[3])
+            parser.add_option(opt_obj)
+            if opt[2]: self.manditory_opts.add(opt_obj.dest)
         if 'global_options' in oc:
             for opt in oc['global_options']:
                 logger.debug('global opt: %s', opt)
@@ -105,3 +113,22 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         parser.action_options = self.action_options
         parser.invokes = self.invokes
         self._log_config()
+
+    def _create_config(self, conf_file, default_vars):
+        return Config(config_file=conf_file, default_vars=default_vars)
+
+    def get_config(self, params):
+        if not hasattr(self, 'config_opt_name'):
+            return super(OneConfPerActionOptionsCli, self).get_config(params)
+        else:
+            logger.debug('config option name: %s, params: %s' %
+                         (self.config_opt_name, params))
+            conf_file = params[self.config_opt_name]
+            if not os.path.isfile(conf_file):
+                raise IOError('no such configuration file: %s' % conf_file)
+            good_keys = filter(lambda x: params[x] != None, params.keys())
+            defaults = {k: str(params[k]) for k in good_keys}
+            logger.debug('defaults: %s' % defaults)
+            conf =  self._create_config(conf_file, defaults)
+            logger.debug('created config: %s' % conf)
+            return conf
