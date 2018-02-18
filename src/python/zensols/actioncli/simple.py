@@ -141,7 +141,7 @@ class SimpleActionCli(object):
             for opt in self.manditory_opts:
                 if not opt in params or params[opt] == None:
                     self._parser_error('missing option: %s' % opt)
-            params['config'] = config
+            if config: params['config'] = config
             try:
                 exec_obj = self.executors[exec_name](params)
                 self._init_executor(exec_obj, config, args[1:])
