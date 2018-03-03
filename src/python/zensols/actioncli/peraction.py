@@ -124,6 +124,8 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
             logger.debug('config option name: %s, params: %s' %
                          (self.config_opt_name, params))
             conf_file = params[self.config_opt_name]
+            if not conf_file:
+                return super(OneConfPerActionOptionsCli, self).get_config(params)
             if not os.path.isfile(conf_file):
                 raise IOError('no such configuration file: %s' % conf_file)
             good_keys = filter(lambda x: params[x] != None, params.keys())
