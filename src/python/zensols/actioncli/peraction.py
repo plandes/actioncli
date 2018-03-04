@@ -69,7 +69,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
             self._add_whine_option(parser, default=oc['whine'])
         if 'config_option' in oc:
             conf = oc['config_option']
-            self.config_opt_name = conf['name']
+            self.config_opt_conf = conf
             opt = conf['opt']
             logger.debug('config opt: %s', opt)
             opt_obj = self.make_option(opt[0], opt[1], **opt[3])
@@ -117,16 +117,23 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
     def _create_config(self, conf_file, default_vars):
         return Config(config_file=conf_file, default_vars=default_vars)
 
+    def _get_default_config(self, params):
+        return super(OneConfPerActionOptionsCli, self).get_config(params)
+
     def get_config(self, params):
-        if not hasattr(self, 'config_opt_name'):
-            return super(OneConfPerActionOptionsCli, self).get_config(params)
+        if not hasattr(self, 'config_opt_conf'):
+            return self._get_default_config(params)
         else:
-            logger.debug('config option name: %s, params: %s' %
-                         (self.config_opt_name, params))
-            conf_file = params[self.config_opt_name]
+            conf = self.config_opt_conf
+            conf_name = conf['name']
+            logger.debug('config configuration: %s, name: %s, params: %s' %
+                         (conf, conf_name, params))
+            conf_file = params[conf_name]
             if not conf_file:
-                return super(OneConfPerActionOptionsCli, self).get_config(params)
+                return self._get_default_config(params)
             if not os.path.isfile(conf_file):
+                if 'expect' in conf and not conf['expect']:
+                    return self._get_default_config(params)
                 raise IOError('no such configuration file: %s' % conf_file)
             good_keys = filter(lambda x: params[x] != None, params.keys())
             defaults = {k: str(params[k]) for k in good_keys}
