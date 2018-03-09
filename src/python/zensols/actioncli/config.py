@@ -44,6 +44,10 @@ class Config(object):
             self._conf = conf
         return self._conf
 
+    @property
+    def file_exists(self):
+        return (self.parser != None)
+
     def get_options(self, section='default', opt_keys=None, vars=None):
         """
         Get all options for a section.  If **opt_keys** is given return
@@ -61,7 +65,9 @@ class Config(object):
                 else:
                     opt_keys = {}
         else:
-            opt_keys = set(opt_keys).intersection(set(conf.options(section)))
+            logger.debug('conf: %s' % conf)
+            copts = conf.options(section) if conf else {}
+            opt_keys = set(opt_keys).intersection(set(copts))
         for option in opt_keys:
             opts[option] = conf.get(section, option, vars=vars)
         return opts
