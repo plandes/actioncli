@@ -16,7 +16,7 @@ Features include:
 The easiest way to obtain this package is via [pip]:
 
 ```bash
-pip install actioncli
+pip install zensols.actioncli
 ```
 
 
