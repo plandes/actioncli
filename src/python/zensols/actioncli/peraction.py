@@ -106,6 +106,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         self.executors[exec_name] = oc['executor']
 
     def config_parser(self):
+        super(OneConfPerActionOptionsCli, self).config_parser()
         parser = self.parser
         self._config_global(self.opt_config)
         for oc in self.opt_config['executors']:

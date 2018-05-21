@@ -99,14 +99,17 @@ class SimpleActionCli(object):
     def _config_parser_for_action(self, args, parser):
         pass
 
+    def config_parser(self):
+        parser = self.parser
+        parser.add_option('-s', '--short', dest='short',
+                          help='short output for list', action='store_true')
+
     def _create_parser(self, usage):
         return OptionParser(usage=usage, version='%prog ' + str(self.version))
 
     def invoke(self, args=sys.argv[1:]):
         usage = 'usage: %prog <list|...> [options]'
         parser = self._create_parser(usage)
-        parser.add_option('-s', '--short', dest='short',
-                          help='short output for list', action='store_true')
         self.parser = parser
         self.config_parser()
         if len(args) > 0 and args[0] in self.invokes:

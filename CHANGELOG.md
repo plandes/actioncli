@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.2] - 2018-05-21
+### Changed
+- Overridable short option listing configuration.
+
 ## [0.0.1] - 2018-03-27
 ### Added
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v0.0.2...HEAD
 [0.0.2]: https://github.com/plandes/actioncli/compare/v0.0.1...v0.0.2
