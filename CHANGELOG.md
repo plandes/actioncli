@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Configuration type (list, boolean) parameter parsing.
 - Contribution file.
+- Travis
 
 ### Changed
 - Move to MIT license.

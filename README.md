@@ -1,5 +1,7 @@
 # Action and Mnemonic command line library
 
+[![Travis CI Build Status][travis-badge]][travis-link]
+
 This library intends to make command line execution and configuration easy.
 The library supports (among other features) an mnemonic centric way to
 tie a command line an *action* to a Python 3 handler code segment.
@@ -113,3 +115,6 @@ SOFTWARE.
 [easyinstall]: https://wiki.python.org/moin/EasyInstall
 [configparser]: https://docs.python.org/3/library/configparser.html
 [optparse]: https://docs.python.org/3/library/optparse.html
+
+[travis-link]: https://travis-ci.org/plandes/actioncli
+[travis-badge]: https://travis-ci.org/plandes/actioncli.svg?branch=master
