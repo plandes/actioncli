@@ -87,6 +87,21 @@ class Config(object):
             if expect:
                 raise ValueError('''no option '%s' found in section %s''' % (name, section))
 
+    def get_option_list(self, name, section=None, vars=None, expect=False, separator=','):
+        """
+        Just like **get_option** but parse as a list using **split**.
+        """
+        val = self.get_option(name, section, vars, expect)
+        return val.split(separator)
+
+    def get_option_boolean(self, name, section=None, vars=None, expect=False):
+        """
+        Just like **get_option** but parse as a boolean (any case `true`).
+        """
+        val = self.get_option(name, section, vars, expect)
+        val = val.lower()
+        return val == 'true'
+
     @property
     def options(self):
         "Return all options from the default section."
