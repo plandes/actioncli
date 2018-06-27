@@ -37,6 +37,8 @@ class TestHelloWorld(unittest.TestCase):
         self.assertEqual(True, conf.get_option_boolean('param3'))
         self.assertEqual(True, conf.get_option_boolean('param4'))
         self.assertEqual(False, conf.get_option_boolean('param5'))
+        self.assertEqual(False, conf.get_option_boolean('no_such_param'))
+        self.assertEqual([], conf.get_option_list('no_such_param'))
 
 def main(args=sys.argv[1:]):
     logging.basicConfig(level=logging.DEBUG)

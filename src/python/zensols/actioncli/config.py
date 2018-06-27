@@ -92,14 +92,14 @@ class Config(object):
         Just like **get_option** but parse as a list using **split**.
         """
         val = self.get_option(name, section, vars, expect)
-        return val.split(separator)
+        return val.split(separator) if val else []
 
     def get_option_boolean(self, name, section=None, vars=None, expect=False):
         """
         Just like **get_option** but parse as a boolean (any case `true`).
         """
         val = self.get_option(name, section, vars, expect)
-        val = val.lower()
+        val = val.lower() if val else 'false'
         return val == 'true'
 
     @property
