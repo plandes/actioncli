@@ -6,7 +6,7 @@ from zensols.actioncli import Config
 
 logger = logging.getLogger('zneosls.config.test')
 
-class TestHelloWorld(unittest.TestCase):
+class TestConfig(unittest.TestCase):
     def test_config(self):
         conf = Config('test-resources/config-test.conf')
         self.assertEqual({'param1':'3.14'}, conf.options)
