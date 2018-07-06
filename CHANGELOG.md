@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [0.0.3] - 2018-07-05
+## [0.0.4] - 2018-07-05
 ### Added
 - General utility logging functionality.
 - OS System execution with logging.
