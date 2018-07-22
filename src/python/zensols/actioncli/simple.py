@@ -78,6 +78,10 @@ class SimpleActionCli(object):
                           type='int', default=default, help='add verbosity to logging')
         self.add_logging = True
 
+    def _add_short_option(self, parser):
+        parser.add_option('-s', '--short', dest='short',
+                          help='short output for list', action='store_true')
+
     def _parser_error(self, msg):
         self.parser.error(msg)
 
@@ -100,9 +104,7 @@ class SimpleActionCli(object):
         pass
 
     def config_parser(self):
-        parser = self.parser
-        parser.add_option('-s', '--short', dest='short',
-                          help='short output for list', action='store_true')
+        pass
 
     def _create_parser(self, usage):
         return OptionParser(usage=usage, version='%prog ' + str(self.version))
@@ -126,7 +128,9 @@ class SimpleActionCli(object):
                 logger.debug('using default action: %s' % self.default_action)
                 action = self.default_action
         if self.add_logging: self._config_logging(options.whine)
-        if action == 'list': self.print_actions(options.short)
+        if action == 'list':
+            short = hasattr(options, 'short') and options.short
+            self.print_actions(short)
         else:
             if not action in self.invokes:
                 self._parser_error("no such action: '%s'" % action)

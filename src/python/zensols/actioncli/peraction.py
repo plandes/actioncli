@@ -4,6 +4,21 @@ from zensols.actioncli import SimpleActionCli, Config
 
 logger = logging.getLogger('zensols.actioncli.peraction')
 
+class PerActionOptionsCli(OneConfPerActionOptionsCli):
+    def __init__(self, conf_var, *args, **kwargs):
+        conf_env_var = conf_var.upper()
+        if conf_env_var in os.environ:
+            default_config_file = os.environ[conf_env_var]
+        else:
+            default_config_file = os.path.expanduser('~/.{}'.format(conf_var))
+
+    def _create_config(self, conf_file, default_vars):
+        defs = {}
+        defs.update(default_vars)
+        defs.update(os.environ)
+        return Config(config_file=conf_file, default_vars=defs)
+
+
 class PrintActionsOptionParser(OptionParser):
     def print_help(self):
         logger.debug('print help: %s' % self.invokes)
@@ -20,6 +35,7 @@ class PrintActionsOptionParser(OptionParser):
                 print()
                 print()
                 op.print_help()
+
 
 class PerActionOptionsCli(SimpleActionCli):
     def __init__(self, *args, **kwargs):
@@ -56,6 +72,7 @@ class PerActionOptionsCli(SimpleActionCli):
                 if opt_cfg['manditory']: self.manditory_opts.add(opt_obj.dest)
         self._log_config()
 
+
 class OneConfPerActionOptionsCli(PerActionOptionsCli):
     def __init__(self, opt_config, **kwargs):
         self.opt_config = opt_config
@@ -67,6 +84,9 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         if 'whine' in oc and oc['whine']:
             logger.debug('configuring whine option')
             self._add_whine_option(parser, default=oc['whine'])
+        if 'short' in oc and oc['short']:
+            logger.debug('configuring short option')
+            self._add_short_option(parser)
         if 'config_option' in oc:
             conf = oc['config_option']
             self.config_opt_conf = conf
