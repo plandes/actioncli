@@ -21,6 +21,8 @@ The easiest way to obtain this package is via [pip]:
 pip install zensols.actioncli
 ```
 
+Binaries are also available on [pypi].
+
 
 ## Usage
 
@@ -115,6 +117,7 @@ SOFTWARE.
 [easyinstall]: https://wiki.python.org/moin/EasyInstall
 [configparser]: https://docs.python.org/3/library/configparser.html
 [optparse]: https://docs.python.org/3/library/optparse.html
+[pypi]: https://pypi.org/project/zensols.actioncli/
 
 [travis-link]: https://travis-ci.org/plandes/actioncli
 [travis-badge]: https://travis-ci.org/plandes/actioncli.svg?branch=master
