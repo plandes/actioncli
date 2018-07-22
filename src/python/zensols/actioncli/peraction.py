@@ -4,20 +4,6 @@ from zensols.actioncli import SimpleActionCli, Config
 
 logger = logging.getLogger('zensols.actioncli.peraction')
 
-class PerActionOptionsCli(OneConfPerActionOptionsCli):
-    def __init__(self, conf_var, *args, **kwargs):
-        conf_env_var = conf_var.upper()
-        if conf_env_var in os.environ:
-            default_config_file = os.environ[conf_env_var]
-        else:
-            default_config_file = os.path.expanduser('~/.{}'.format(conf_var))
-
-    def _create_config(self, conf_file, default_vars):
-        defs = {}
-        defs.update(default_vars)
-        defs.update(os.environ)
-        return Config(config_file=conf_file, default_vars=defs)
-
 
 class PrintActionsOptionParser(OptionParser):
     def print_help(self):
@@ -162,3 +148,19 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
             conf =  self._create_config(conf_file, defaults)
             logger.debug('created config: %s' % conf)
             return conf
+
+
+class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
+    def __init__(self, opt_config, conf_var, *args, **kwargs):
+        super(PerActionOptionsCli, self).__init__(opt_config, *args, **kwargs)
+        conf_env_var = conf_var.upper()
+        if conf_env_var in os.environ:
+            default_config_file = os.environ[conf_env_var]
+        else:
+            default_config_file = os.path.expanduser('~/.{}'.format(conf_var))
+
+    def _create_config(self, conf_file, default_vars):
+        defs = {}
+        defs.update(default_vars)
+        defs.update(os.environ)
+        return Config(config_file=conf_file, default_vars=defs)
