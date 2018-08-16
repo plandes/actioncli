@@ -2,7 +2,7 @@
 
 PROJ_TYPE=	python
 
-#PY_SRC_TEST_PKGS=log_test.TestLogConf
+PY_SRC_TEST_PKGS=yaml_test.TestYaml
 
 # make build dependencies
 _ :=	$(shell [ ! -d .git ] && git init ; [ ! -d zenbuild ] && \

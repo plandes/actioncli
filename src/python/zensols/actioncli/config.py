@@ -1,6 +1,9 @@
-import configparser, os, logging
+import os
+import logging
+import configparser
 
-logger = logging.getLogger('zensols.config')
+logger = logging.getLogger('zensols.actioncli.conf')
+
 
 class Config(object):
     """
@@ -14,8 +17,8 @@ class Config(object):
         Keyword arguments:
         :param str config_file: the configuration file path to read from
         :param str default_section: default section (defaults to `default`)
-        :param bool robust: -- if `True`, then don't raise an error when the configuration
-                    file is missing
+        :param bool robust: -- if `True`, then don't raise an error when the
+                    configuration file is missing
         """
         self.config_file = config_file
         self.default_section = default_section
@@ -46,7 +49,7 @@ class Config(object):
 
     @property
     def file_exists(self):
-        return (self.parser != None)
+        return self.parser is not None
 
     def get_options(self, section='default', opt_keys=None, vars=None):
         """
@@ -56,8 +59,8 @@ class Config(object):
         vars = vars if vars else self.default_vars
         conf = self.parser
         opts = {}
-        if opt_keys == None:
-            if conf == None:
+        if opt_keys is None:
+            if conf is None:
                 opt_keys = {}
             else:
                 if not self.robust or conf.has_section(section):
@@ -78,16 +81,18 @@ class Config(object):
         **section** defaults to constructor's **default_section**.
         """
         vars = vars if vars else self.default_vars
-        if section == None:
+        if section is None:
             section = self.default_section
         opts = self.get_options(section, opt_keys=[name], vars=vars)
         if opts:
             return opts[name]
         else:
             if expect:
-                raise ValueError('''no option '%s' found in section %s''' % (name, section))
+                raise ValueError('no option \'{}\' found in section {}'.
+                                 format(name, section))
 
-    def get_option_list(self, name, section=None, vars=None, expect=False, separator=','):
+    def get_option_list(self, name, section=None, vars=None,
+                        expect=False, separator=','):
         """
         Just like **get_option** but parse as a list using **split**.
         """
@@ -114,4 +119,5 @@ class Config(object):
         if secs: return set(secs)
 
     def __str__(self):
-        return str('file: %s, section: %s' % (self.config_file, self.sections))
+        return str('file: {}, section: {}'.
+                   format(self.config_file, self.sections))
