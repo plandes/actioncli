@@ -9,6 +9,7 @@ class TestYaml(unittest.TestCase):
     def test_yaml(self):
         defaults = {'HOME': 'homedir'}
         conf = YamlConfig('test-resources/config-test.yml',
+                          delimiter='^',
                           default_vars=defaults)
         single_op = conf.get_option('project.template-directory.default')
         self.assertEqual('make-proj', single_op)

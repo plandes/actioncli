@@ -6,7 +6,7 @@ import copy
 class YamlConfig(object):
     CLASS_VER = 0
 
-    def __init__(self, config_file=None, delimiter='^', default_vars=None):
+    def __init__(self, config_file=None, delimiter='$', default_vars=None):
         self.config_file = config_file
         self.delimiter = delimiter
         self.default_vars = default_vars
