@@ -58,12 +58,14 @@ class YamlConfig(object):
                         return v
         return find(self.config, '', name)
 
-    def get_option(self, name):
+    def get_option(self, name, expect=False):
         node = self._option(name)
         if isinstance(node, str):
             return node
-        elif name in self.default_vars:
+        elif self.default_vars is not None and name in self.default_vars:
             return self.default_vars[name]
+        elif expect:
+            raise ValueError('no such option: {}'.format(name))
 
     def get_options(self, name):
         node = self._option(name)

@@ -1,16 +1,20 @@
 import logging
+import unittest
+import sys
+import os
+from zensols.actioncli import Config
+from zensols.actioncli import PerActionOptionsCli
+from zensols.actioncli import OneConfPerActionOptionsCli
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 logging.basicConfig(level=logging.INFO)
-
-import unittest, sys, os
-from zensols.actioncli import SimpleActionCli, Config, \
-    PerActionOptionsCli, OneConfPerActionOptionsCli
 
 logger = logging.getLogger('zensols.test')
 
+
 class AppTester(object):
-    def __init__(self, some_opt_name, a_file_name, config=None, a_num_option=None, amand_opt=None):
+    def __init__(self, some_opt_name, a_file_name, config=None,
+                 a_num_option=None, amand_opt=None):
         self.some_opt_name = some_opt_name
         self.a_file_name = a_file_name
         self.a_num_option = a_num_option
@@ -31,21 +35,28 @@ class AppTester(object):
     def set_args(self, args):
         self.args = args
 
+
 class AppCommandLine(PerActionOptionsCli):
     def __init__(self, conf_file=None, use_environ=False, config_mand=False):
         opts = {'some_opt_name', 'config', 'a_file_name', 'a_num_option'}
         manditory_opts = {'some_opt_name'}
-        if config_mand: manditory_opts.update({'config'})
-        if use_environ: environ_opts = opts
-        else: environ_opts = {}
+        if config_mand:
+            manditory_opts.update({'config'})
+        if use_environ:
+            environ_opts = opts
+        else:
+            environ_opts = {}
         executors = {'app_test_key': lambda params: AppTester(**params)}
         invokes = {'start': ['app_test_key', 'startaction', 'test doc'],
                    'stop': ['app_test_key', 'stopaction', 'test doc']}
-        if conf_file: conf = Config(conf_file, robust=True)
-        else: conf = None
-        super(AppCommandLine, self).__init__(executors, invokes, config=conf,
-                                             opts=opts, manditory_opts=manditory_opts,
-                                             environ_opts=environ_opts)
+        if conf_file:
+            conf = Config(conf_file, robust=True)
+        else:
+            conf = None
+        super(AppCommandLine, self).__init__(
+            executors, invokes, config=conf,
+            opts=opts, manditory_opts=manditory_opts,
+            environ_opts=environ_opts)
 
     def _config_logging(self, level):
         pass
@@ -63,6 +74,7 @@ class AppCommandLine(PerActionOptionsCli):
                                         'manditory': False},
                                        {'opt_obj': self.make_option('-n', '--num', dest='a_num_option', type='int'),
                                         'manditory': False}]
+
 
 class TestCommandOpTest(unittest.TestCase):
     def setUp(self):
