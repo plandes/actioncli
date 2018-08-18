@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2018-08-18
+### Added
+- Adding 
+
 
 ## [0.0.5] - 2018-07-21
 ### Added
@@ -39,7 +43,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/plandes/actioncli/compare/v0.0.6...v1.0.0
 [0.0.5]: https://github.com/plandes/actioncli/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/plandes/actioncli/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/plandes/actioncli/compare/v0.0.2...v0.0.3
