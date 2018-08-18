@@ -1,4 +1,8 @@
-import logging, inspect, optparse, re, os
+import logging
+import inspect
+import optparse
+import re
+import os
 from optparse import OptionParser
 from zensols.actioncli import SimpleActionCli, Config
 
@@ -15,8 +19,7 @@ class PrintActionsOptionParser(OptionParser):
             if action in self.action_options:
                 opts = map(lambda x: x['opt_obj'], self.action_options[action])
                 op = OptionParser(option_list=opts)
-                #op.set_usage(optparse.SUPPRESS_USAGE)
-                op.set_usage('usage: %%prog %s [additional options]\n\n%s' % \
+                op.set_usage('usage: %%prog %s [additional options]\n\n%s' %
                              (action, invoke[2].capitalize()))
                 print()
                 print()
@@ -44,7 +47,8 @@ class PerActionOptionsCli(SimpleActionCli):
         return optparse.make_option(*args, **kwargs)
 
     def _create_parser(self, usage):
-        return PrintActionsOptionParser(usage=usage, version='%prog ' + str(self.version))
+        return PrintActionsOptionParser(
+            usage=usage, version='%prog ' + str(self.version))
 
     def _config_parser_for_action(self, args, parser):
         logger.debug('config parser for action: %s' % args)
@@ -55,7 +59,8 @@ class PerActionOptionsCli(SimpleActionCli):
                 parser.add_option(opt_obj)
                 self.opts.add(opt_obj.dest)
                 logger.debug('manditory: %s' % opt_cfg['manditory'])
-                if opt_cfg['manditory']: self.manditory_opts.add(opt_obj.dest)
+                if opt_cfg['manditory']:
+                    self.manditory_opts.add(opt_obj.dest)
         self._log_config()
 
 
