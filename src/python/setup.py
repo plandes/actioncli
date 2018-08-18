@@ -42,7 +42,7 @@ def get_requires():
 
 setup(
     name = "zensols.actioncli",
-    packages=get_packages(['zensols.actioncli']),
+    packages=get_packages(['zensols']),
     version = '1.0.0',
     description = 'This library intends to make command line execution and configuration easy.',
     author = 'Paul Landes',
