@@ -1,22 +1,21 @@
 import yaml
 import pprint
-from string import Template
-
-
-class YamlTemplate(Template):
-    idpattern = r'[a-z][_a-z0-9.]*'
+import copy
 
 
 class YamlConfig(object):
-    def __init__(self, config_file=None, default_vars=None):
+    CLASS_VER = 0
+
+    def __init__(self, config_file=None, delimiter='^', default_vars=None):
         self.config_file = config_file
+        self.delimiter = delimiter
         self.default_vars = default_vars
 
     def _parse(self):
         with open(self.config_file) as f:
             content = f.read()
         struct = yaml.load(content)
-        context = {}
+        context = copy.deepcopy(self.default_vars)
 
         def flatten(path, n):
             if isinstance(n, str):
@@ -29,12 +28,29 @@ class YamlConfig(object):
         flatten('', struct)
         return content, struct, context
 
+    def _make_class(self):
+        class_name = 'YamlTemplate{}'.format(self.CLASS_VER)
+        self.CLASS_VER += 1
+        # why couldn't they have made idpattern and delimiter instance members?
+        # note we have to give the option of different delimiters since the
+        # default '$$' (use case=OS env vars) is always resolved to '$' given
+        # the iterative variable substitution method
+        code = """\
+from string import Template
+class """ + class_name + """(Template):
+     idpattern = r'[a-z][_a-z0-9.]*'
+     delimiter = '""" + self.delimiter + '\''
+        exec(code)
+        cls = eval(class_name)
+        return cls
+
     def _compile(self):
         content, struct, context = self._parse()
         prev = None
+        cls = self._make_class()
         while prev != content:
             prev = content
-            content = YamlTemplate(content).substitute(context)
+            content = cls(content).substitute(context)
         return yaml.load(content)
 
     @property

@@ -1,6 +1,6 @@
 project:
   org_name: Zensol Python
-  name: ${project.org_name} Project
+  name: ^{project.org_name} Project
   description: Simple Clojure project
   template-directory:
     description: root of source code tree
@@ -11,4 +11,6 @@ project:
       description: github repo name
       example: nlparse
       default: someproj
-      aval: ${project.name}
+      aval: ^{project.name}
+    litval: a non-subst ${HOME} but ^{HOME} works val
+    envval: here

@@ -1,7 +1,5 @@
 import logging
 import unittest
-import sys
-import os
 from zensols.actioncli import Config
 from zensols.actioncli import PerActionOptionsCli
 from zensols.actioncli import OneConfPerActionOptionsCli
