@@ -1,13 +1,15 @@
-import logging, sys, os
-
+import logging
+import sys
+import os
 from optparse import OptionParser
-from zensols.actioncli import Config
 
 logger = logging.getLogger('zensols.actioncli')
 
+
 class ActionCliError(Exception):
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
 
 class SimpleActionCli(object):
     """A simple action based command line interface.
@@ -31,7 +33,8 @@ class SimpleActionCli(object):
             options to add from environment variables; each are upcased to
             be match and retrieved from the environment but are lowercased in
             the results param set
-        :param str default_action: the action to use if non is specified (if any)
+        :param str default_action: the action to use if non is
+            specified (if any)
         """
         opts = opts if opts else set([])
         manditory_opts = manditory_opts if manditory_opts else set([])
@@ -75,7 +78,8 @@ class SimpleActionCli(object):
 
     def _add_whine_option(self, parser, default=0):
         parser.add_option('-w', '--whine', dest='whine', metavar='NUMBER',
-                          type='int', default=default, help='add verbosity to logging')
+                          type='int', default=default,
+                          help='add verbosity to logging')
         self.add_logging = True
 
     def _add_short_option(self, parser):
@@ -122,17 +126,18 @@ class SimpleActionCli(object):
         if len(args) > 0:
             action = args[0]
         else:
-            if self.default_action == None:
+            if self.default_action is None:
                 self._parser_error('missing action mnemonic')
             else:
                 logger.debug('using default action: %s' % self.default_action)
                 action = self.default_action
-        if self.add_logging: self._config_logging(options.whine)
+        if self.add_logging:
+            self._config_logging(options.whine)
         if action == 'list':
             short = hasattr(options, 'short') and options.short
             self.print_actions(short)
         else:
-            if not action in self.invokes:
+            if action not in self.invokes:
                 self._parser_error("no such action: '%s'" % action)
             (exec_name, meth, _) = self.invokes[action]
             logging.debug('exec_name: %s, meth: %s' % (exec_name, meth))
@@ -140,15 +145,16 @@ class SimpleActionCli(object):
             config = self.get_config(params)
             def_params = config.options if config else {}
             def_params.update(self._default_environ_opts())
-            for k,v in params.items():
-                if v == None and k in def_params:
+            for k, v in params.items():
+                if v is None and k in def_params:
                     params[k] = def_params[k]
             logger.debug('before filter: %s' % params)
             params = {k: params[k] for k in params.keys() & self.opts}
             for opt in self.manditory_opts:
-                if not opt in params or params[opt] == None:
+                if opt not in params or params[opt] is None:
                     self._parser_error('missing option: %s' % opt)
-            if config: params['config'] = config
+            if config:
+                params['config'] = config
             try:
                 exec_obj = self.executors[exec_name](params)
                 self._init_executor(exec_obj, config, args[1:])

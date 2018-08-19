@@ -2,6 +2,7 @@ import unittest
 import logging
 from zensols.actioncli import YamlConfig
 
+#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('zensols.actioncli.yaml')
 
 
@@ -18,3 +19,6 @@ class TestYaml(unittest.TestCase):
         eqstr = 'a non-subst ${HOME} but homedir works val'
         self.assertEqual(eqstr, conf.get_option(
             'project.context.litval', expect=True))
+        eqlist = ['apple', 'banana', 'nlparse orange']
+        self.assertEqual(eqlist, conf.get_option(
+            'project.fruit', expect=True))

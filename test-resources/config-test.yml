@@ -14,3 +14,7 @@ project:
       aval: ^{project.name}
     litval: a non-subst ${HOME} but ^{HOME} works val
     envval: here
+  fruit:
+    - apple
+    - banana
+    - ^{project.context.project.example} orange

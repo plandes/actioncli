@@ -1,8 +1,10 @@
-import logging
-import inspect
-import optparse
 import re
 import os
+import sys
+import logging
+import inspect
+from functools import reduce
+import optparse
 from optparse import OptionParser
 from zensols.actioncli import SimpleActionCli, Config
 
@@ -10,20 +12,80 @@ logger = logging.getLogger('zensols.actioncli.peraction')
 
 
 class PrintActionsOptionParser(OptionParser):
-    def print_help(self):
+    """Implements a human readable implementation of print_help for action based
+    command line handlers (i.e. OneConfPerActionOptionsCli).
+
+    """
+    def __init__(self, *args, **kwargs):
+        super(PrintActionsOptionParser, self).__init__(*args, **kwargs)
+
+    @property
+    def action_options(self):
+        return self._action_options
+
+    @property
+    def action_names(self):
+        return sorted(self.action_options.keys())
+
+    @action_options.setter
+    def action_options(self, opts):
+        self._action_options = opts
+        self.usage = 'usage: %prog <list|{}> [options]'.\
+                     format('|'.join(self.action_names))
+
+    def print_help(self, file=sys.stdout):
         logger.debug('print help: %s' % self.invokes)
         logger.debug('action options: %s' % self.action_options)
-        OptionParser.print_help(self)
-        for action, invoke in self.invokes.items():
-            logger.debug('print action: %s, invoke: %s' % (action, invoke))
-            if action in self.action_options:
-                opts = map(lambda x: x['opt_obj'], self.action_options[action])
-                op = OptionParser(option_list=opts)
-                op.set_usage('usage: %%prog %s [additional options]\n\n%s' %
-                             (action, invoke[2].capitalize()))
-                print()
-                print()
-                op.print_help()
+        OptionParser.print_help(self, file)
+
+        action_name_len = reduce(lambda x, y: max(x, y),
+                                 map(lambda x: len(x), self.action_names))
+        action_fmt_str = '  {:<' + str(action_name_len) + '}  {}'
+        action_help = []
+        opt_str_len = 0
+        def_str_len = 0
+        # format text for each action and respective options
+        for action_name in self.action_names:
+            if action_name in self.invokes:
+                action_doc = self.invokes[action_name][2].capitalize()
+                opts = map(lambda x: x['opt_obj'],
+                           self.action_options[action_name])
+                logger.debug('{} -> {}, {}'.format(
+                    action_name, action_doc, opts))
+                opt_strs = []
+                for opt in opts:
+                    short_opt, long_opt, sep, default = '', '', '', ''
+                    if opt._short_opts and len(opt._short_opts) > 0:
+                        short_opt = opt._short_opts[0]
+                    if opt._long_opts and len(opt._long_opts) > 0:
+                        long_opt = opt._long_opts[0]
+                    otype = ' <{}>'.format(opt.type) if opt.type else ''
+                    if len(short_opt) > 0 and len(long_opt) > 0:
+                        sep = ', '
+                    opt_str = '  {}{}{}{}'.format(
+                        short_opt, sep, long_opt, otype)
+                    if opt.default and opt.default != ('NO', 'DEFAULT'):
+                        default = str(opt.default)
+                    opt_strs.append({'str': opt_str,
+                                     'default': default,
+                                     'help': opt.help})
+                    opt_str_len = max(opt_str_len, len(opt_str))
+                    def_str_len = max(def_str_len, len(default))
+                action_help.append(
+                    {'doc': action_fmt_str.format(action_name, action_doc),
+                     'opts': opt_strs})
+
+        opt_str_fmt = '{:<' + str(opt_str_len) + '}  {:<' +\
+                      str(def_str_len) + '}  {}\n'
+
+        file.write('Actions:\n')
+        for i, ah in enumerate(action_help):
+            file.write(ah['doc'] + '\n')
+            for op in ah['opts']:
+                file.write(opt_str_fmt.format(
+                    op['str'], op['default'], op['help']))
+            if i < len(action_help) - 1:
+                file.write('\n')
 
 
 class PerActionOptionsCli(SimpleActionCli):
@@ -65,6 +127,11 @@ class PerActionOptionsCli(SimpleActionCli):
 
 
 class OneConfPerActionOptionsCli(PerActionOptionsCli):
+    """Convenience action handler that allows a definition on a per action
+    basis.  See the test cases for examples of how to use this as the detail is
+    all in the configuration pased to the init method.
+
+    """
     def __init__(self, opt_config, **kwargs):
         self.opt_config = opt_config
         super(OneConfPerActionOptionsCli, self).__init__({}, {}, **kwargs)
@@ -85,7 +152,8 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
             logger.debug('config opt: %s', opt)
             opt_obj = self.make_option(opt[0], opt[1], **opt[3])
             parser.add_option(opt_obj)
-            if opt[2]: self.manditory_opts.add(opt_obj.dest)
+            if opt[2]:
+                self.manditory_opts.add(opt_obj.dest)
         if 'global_options' in oc:
             for opt in oc['global_options']:
                 logger.debug('global opt: %s', opt)
@@ -93,7 +161,8 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
                 logger.debug('parser opt: %s', opt_obj)
                 parser.add_option(opt_obj)
                 self.opts.add(opt_obj.dest)
-                if opt[2]: self.manditory_opts.add(opt_obj.dest)
+                if opt[2]:
+                    self.manditory_opts.add(opt_obj.dest)
 
     def _config_executor(self, oc):
         exec_name = oc['name']
@@ -147,15 +216,20 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
                 if 'expect' in conf and not conf['expect']:
                     return self._get_default_config(params)
                 raise IOError('no such configuration file: %s' % conf_file)
-            good_keys = filter(lambda x: params[x] != None, params.keys())
+            good_keys = filter(lambda x: params[x] is not None, params.keys())
             defaults = {k: str(params[k]) for k in good_keys}
             logger.debug('defaults: %s' % defaults)
-            conf =  self._create_config(conf_file, defaults)
+            conf = self._create_config(conf_file, defaults)
             logger.debug('created config: %s' % conf)
             return conf
 
 
 class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
+    """A command line option parser that first parses an ini file and passes that
+    configuration on to the rest of the CLI action processing in the super
+    class.
+
+    """
     def __init__(self, opt_config, conf_var, *args, **kwargs):
         super(PerActionOptionsCli, self).__init__(opt_config, *args, **kwargs)
         conf_env_var = conf_var.upper()
@@ -163,9 +237,11 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
             default_config_file = os.environ[conf_env_var]
         else:
             default_config_file = os.path.expanduser('~/.{}'.format(conf_var))
+        self.default_config_file = default_config_file
 
     def _create_config(self, conf_file, default_vars):
         defs = {}
         defs.update(default_vars)
         defs.update(os.environ)
+        defs.update(self.default_config_file)
         return Config(config_file=conf_file, default_vars=defs)
