@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.0.3] - 2018-08-18
+### Changes
+- Requirements in setup.
+
+
 ## [1.0.2] - 2018-08-18
 ### Changes
 - Yaml bug fix: priority of default variables to mimic ConfigParser.
@@ -58,7 +63,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/plandes/actioncli/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/plandes/actioncli/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/plandes/actioncli/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/plandes/actioncli/compare/v0.0.6...v1.0.0
