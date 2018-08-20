@@ -23,7 +23,8 @@ class TestYaml(unittest.TestCase):
             'project.fruit', expect=True))
 
     def test_yaml_ops(self):
-        ops = {'project.context.envval': 'here',
+        ops = {'HOME': 'homedir',
+               'project.context.envval': 'here',
                'project.context.litval': 'a non-subst ${HOME} but homedir works val',
                'project.context.project.aval': 'Zensol Python Project',
                'project.context.project.default': 'someproj',

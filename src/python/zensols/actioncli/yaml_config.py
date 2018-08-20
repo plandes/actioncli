@@ -28,6 +28,7 @@ class YamlConfig(object):
             content = f.read()
         struct = yaml.load(content)
         context = {}
+        context.update(self.default_vars)
 
         def flatten(path, n):
             logger.debug('path: {}, n: <{}>'.format(path, n))
@@ -44,9 +45,7 @@ class YamlConfig(object):
                                      format(type(n), n))
 
         flatten('', struct)
-        #copy.deepcopy(self.default_vars)
         self._all_keys = copy.copy(list(context.keys()))
-        context.update(self.default_vars)
         return content, struct, context
 
     def _make_class(self):
@@ -119,16 +118,22 @@ class """ + class_name + """(Template):
         return self._options
 
     def get_option(self, name, expect=False):
-        ops = self.options
-        if name not in ops and expect:
-            raise ValueError('no such option: {}'.format(name))
-        return ops[name]
+        if self.default_vars and name in self.default_vars:
+            return self.default_vars[name]
+        else:
+            ops = self.options
+            if name not in ops and expect:
+                raise ValueError('no such option: {}'.format(name))
+            return ops[name]
 
     def get_options(self, name, expect=False):
-        node = self._option(name)
-        if not isinstance(node, str) or isinstance(node, list):
-            return node
-        elif name in self.default_vars:
+        if self.default_vars and name in self.default_vars:
             return self.default_vars[name]
-        elif expect:
-            raise ValueError('no such option: {}'.format(name))
+        else:
+            node = self._option(name)
+            if not isinstance(node, str) or isinstance(node, list):
+                return node
+            elif name in self.default_vars:
+                return self.default_vars[name]
+            elif expect:
+                raise ValueError('no such option: {}'.format(name))
