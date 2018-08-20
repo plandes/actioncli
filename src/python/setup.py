@@ -48,7 +48,7 @@ setup(
     author = 'Paul Landes',
     author_email = 'landes@mailc.net',
     url = 'https://github.com/plandes/actioncli',
-    download_url = 'https://github.com/plandes/actioncli/releases/download/v1.0.0/zensols.actioncli-1.0.2-py3-none-any.whl',
+    download_url = 'https://github.com/plandes/actioncli/releases/download/v1.0.2/zensols.actioncli-1.0.2-py3-none-any.whl',
     long_description=get_long_description(),
     long_description_content_type = 'text/markdown',
     keywords = ['tooling'],
