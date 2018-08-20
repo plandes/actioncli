@@ -90,7 +90,7 @@ class """ + class_name + """(Template):
             if path == name:
                 logger.debug('found: <{}>'.format(n))
                 return n
-            elif not isinstance(n, str):
+            elif isinstance(n, dict):
                 for k, v in n.items():
                     k = path + '.' + k if len(path) else k
                     v = find(v, k, name)
@@ -124,9 +124,11 @@ class """ + class_name + """(Template):
             raise ValueError('no such option: {}'.format(name))
         return ops[name]
 
-    def get_options(self, name):
+    def get_options(self, name, expect=False):
         node = self._option(name)
         if not isinstance(node, str) or isinstance(node, list):
             return node
         elif name in self.default_vars:
             return self.default_vars[name]
+        elif expect:
+            raise ValueError('no such option: {}'.format(name))

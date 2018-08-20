@@ -36,7 +36,6 @@ class TestYaml(unittest.TestCase):
                'project.template-directory.default': 'make-proj',
                'project.template-directory.description': 'root of source code tree',
                'project.template-directory.example': 'view/template/proj'}
-
         defaults = {'HOME': 'homedir'}
         conf = YamlConfig('test-resources/config-test.yml',
                           delimiter='^',
