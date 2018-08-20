@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.0.0] - 2018-08-18
 ### Added
-- Adding 
+- Command line help is now much more readable
+
+### Changed
+- Fix yaml bug on list processing
 
 
 ## [0.0.5] - 2018-07-21
