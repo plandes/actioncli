@@ -7,6 +7,15 @@ logger = logging.getLogger('zensols.actioncli.yml')
 
 
 class YamlConfig(object):
+    """Just like zensols.actioncli.Config but parse configuration from YAML files.
+    Variable substitution works just like ini files, but you can set what
+    delimiter to use and keys are the paths of the data in the hierarchy
+    separated by dots.
+
+    See the test cases for example.
+
+    """
+
     CLASS_VER = 0
 
     def __init__(self, config_file=None, delimiter='$', default_vars=None):
@@ -18,7 +27,7 @@ class YamlConfig(object):
         with open(self.config_file) as f:
             content = f.read()
         struct = yaml.load(content)
-        context = copy.deepcopy(self.default_vars)
+        context = {}
 
         def flatten(path, n):
             logger.debug('path: {}, n: <{}>'.format(path, n))
@@ -35,6 +44,9 @@ class YamlConfig(object):
                                      format(type(n), n))
 
         flatten('', struct)
+        #copy.deepcopy(self.default_vars)
+        self._all_keys = copy.copy(list(context.keys()))
+        context.update(self.default_vars)
         return content, struct, context
 
     def _make_class(self):
@@ -88,7 +100,7 @@ class """ + class_name + """(Template):
                 logger.debug('not found: {}'.format(name))
         return find(self.config, '', name)
 
-    def get_option(self, name, expect=False):
+    def _get_option(self, name, expect=False):
         node = self._option(name)
         if isinstance(node, str) or isinstance(node, list):
             return node
@@ -96,6 +108,21 @@ class """ + class_name + """(Template):
             return self.default_vars[name]
         elif expect:
             raise ValueError('no such option: {}'.format(name))
+
+    @property
+    def options(self):
+        if not hasattr(self, '_options'):
+            self.config
+            self._options = {}
+            for k in self._all_keys:
+                self._options[k] = self._get_option(k, expect=True)
+        return self._options
+
+    def get_option(self, name, expect=False):
+        ops = self.options
+        if name not in ops and expect:
+            raise ValueError('no such option: {}'.format(name))
+        return ops[name]
 
     def get_options(self, name):
         node = self._option(name)

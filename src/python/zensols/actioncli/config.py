@@ -6,9 +6,9 @@ logger = logging.getLogger('zensols.actioncli.conf')
 
 
 class Config(object):
-    """
-    Application configuration utility.  This reads from a configuration and
+    """Application configuration utility.  This reads from a configuration and
     returns sets or subsets of options.
+
     """
     def __init__(self, config_file=None, default_section='default',
                  robust=False, default_vars=None):
@@ -116,7 +116,8 @@ class Config(object):
     def sections(self):
         "Return all sections."
         secs = self.parser.sections()
-        if secs: return set(secs)
+        if secs:
+            return set(secs)
 
     def __str__(self):
         return str('file: {}, section: {}'.
