@@ -23,6 +23,12 @@ class YamlConfig(object):
         self.delimiter = delimiter
         self.default_vars = default_vars if default_vars else {}
 
+    @classmethod
+    def _is_primitive(cls, obj):
+        return isinstance(obj, str) or \
+           isinstance(obj, list) or \
+           isinstance(obj, bool)
+
     def _parse(self):
         with open(self.config_file) as f:
             content = f.read()
@@ -33,7 +39,7 @@ class YamlConfig(object):
         def flatten(path, n):
             logger.debug('path: {}, n: <{}>'.format(path, n))
             logger.debug('context: <{}>'.format(context))
-            if isinstance(n, str) or isinstance(n, list):
+            if self._is_primitive(n):
                 context[path] = n
             else:
                 if isinstance(n, dict):
@@ -101,7 +107,7 @@ class """ + class_name + """(Template):
 
     def _get_option(self, name, expect=False):
         node = self._option(name)
-        if isinstance(node, str) or isinstance(node, list):
+        if self._is_primitive(node):
             return node
         elif self.default_vars is not None and name in self.default_vars:
             return self.default_vars[name]
@@ -122,9 +128,10 @@ class """ + class_name + """(Template):
             return self.default_vars[name]
         else:
             ops = self.options
-            if name not in ops and expect:
+            if name in ops:
+                return ops[name]
+            elif expect:
                 raise ValueError('no such option: {}'.format(name))
-            return ops[name]
 
     def get_options(self, name, expect=False):
         if self.default_vars and name in self.default_vars:
