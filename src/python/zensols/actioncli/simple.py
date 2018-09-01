@@ -27,7 +27,8 @@ class SimpleActionCli(object):
             keys are names of in executors and values are
             arrays with the form: [<option name>, <method name>, <usage doc>]
         :param config: an instance of `zensols.config.Config`
-        :param str version: the version of this command line module
+        :param str version: the default version of this command line module,
+            which is overrided by the package's version if it exists
         :param pkg_dist: the name of the module (i.e. zensols.actioncli)
         :param set opts: options to be parsed
         :param set manditory_opts: options that must be supplied in the command
@@ -37,6 +38,7 @@ class SimpleActionCli(object):
             the results param set
         :param str default_action: the action to use if non is
             specified (if any)
+
         """
         opts = opts if opts else set([])
         manditory_opts = manditory_opts if manditory_opts else set([])
@@ -59,8 +61,6 @@ class SimpleActionCli(object):
                 pass
         if config is not None:
             config.pkg = self.pkg
-        if self.version is None:
-            self.version = version
 
     def _config_logging(self, level):
         root = logging.getLogger()
@@ -123,6 +123,10 @@ class SimpleActionCli(object):
     def config_parser(self):
         pass
 
+    def _init_config(self, config):
+        if self.pkg is not None:
+            config.pkg = self.pkg
+
     def _create_parser(self, usage):
         return OptionParser(usage=usage, version='%prog ' + str(self.version))
 
@@ -156,6 +160,7 @@ class SimpleActionCli(object):
             logging.debug('exec_name: %s, meth: %s' % (exec_name, meth))
             params = vars(options)
             config = self.get_config(params)
+            self._init_config(config)
             def_params = config.options if config else {}
             def_params.update(self._default_environ_opts())
             for k, v in params.items():
