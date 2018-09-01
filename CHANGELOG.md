@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-
-## [1.0.5] - 2018-08-29
+## [1.0.5] - 2018-08-31
 ### Changes
 - Bug fix in YAML parser.
+- Get version from pkg_resources instead of from a hard coded string.
 
 
 ## [1.0.3] - 2018-08-18

@@ -2,6 +2,7 @@ import logging
 import sys
 import os
 from optparse import OptionParser
+from pkg_resources import get_distribution, DistributionNotFound
 
 logger = logging.getLogger('zensols.actioncli')
 
@@ -14,9 +15,9 @@ class ActionCliError(Exception):
 class SimpleActionCli(object):
     """A simple action based command line interface.
     """
-    def __init__(self, executors, invokes, config=None, version='0.1',
-                 opts=None, manditory_opts=None, environ_opts=None,
-                 default_action=None):
+    def __init__(self, executors, invokes, config=None, version='none',
+                 pkg_dist=None, opts=None, manditory_opts=None,
+                 environ_opts=None, default_action=None):
         """Construct.
 
         :param dict executors:
@@ -27,6 +28,7 @@ class SimpleActionCli(object):
             arrays with the form: [<option name>, <method name>, <usage doc>]
         :param config: an instance of `zensols.config.Config`
         :param str version: the version of this command line module
+        :param pkg_dist: the name of the module (i.e. zensols.actioncli)
         :param set opts: options to be parsed
         :param set manditory_opts: options that must be supplied in the command
         :param set environ_opts:
@@ -48,6 +50,17 @@ class SimpleActionCli(object):
         self.add_logging = False
         self.config = config
         self.default_action = default_action
+        self.pkg = None
+        if pkg_dist is not None:
+            try:
+                self.pkg = get_distribution(pkg_dist)
+                self.version = self.pkg.version
+            except DistributionNotFound:
+                pass
+        if config is not None:
+            config.pkg = self.pkg
+        if self.version is None:
+            self.version = version
 
     def _config_logging(self, level):
         root = logging.getLogger()
