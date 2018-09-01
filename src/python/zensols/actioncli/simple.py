@@ -124,7 +124,7 @@ class SimpleActionCli(object):
         pass
 
     def _init_config(self, config):
-        if self.pkg is not None:
+        if self.pkg is not None and hasattr(self, 'pkg'):
             config.pkg = self.pkg
 
     def _create_parser(self, usage):
