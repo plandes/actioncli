@@ -91,11 +91,6 @@ See the [command line test cases](test/python/cli_env_test.py) for more
 examples.
 
 
-
-### Environment Configuration
-
-
-
 ## Changelog
 
 An extensive changelog is available [here](CHANGELOG.md).
