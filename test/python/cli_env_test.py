@@ -39,7 +39,8 @@ class ConfAppCommandLine(OneConfPerActionOptionsCliEnv):
                                           'help': 'configuration file'}]},
                'whine': 1}
         super(ConfAppCommandLine, self).__init__(
-            cnf, conf_var=conf_var, config_type=ExtendedInterpolationConfig)
+            cnf, config_env_name=conf_var,
+            config_type=ExtendedInterpolationConfig)
 
 
 class TestActionCliEnvironment(unittest.TestCase):
