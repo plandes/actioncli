@@ -131,6 +131,9 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
     basis.  See the test cases for examples of how to use this as the detail is
     all in the configuration pased to the init method.
 
+    :param opt_config: the option configuration (see project documentation)
+    :param config_type: the class used for the configuration and defaults to
+    ``zensols.actioncli.Config``
     """
     def __init__(self, opt_config, config_type=Config, **kwargs):
         self.opt_config = opt_config
@@ -240,19 +243,24 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
     configuration on to the rest of the CLI action processing in the super
     class.
 
+    :param opt_config: the option configuration (see project documentation)
+    :param config_env_name: the name of the environment variable that holds the
+    resource like name (i.e. ~/.<program name>rc); this will be used as the
+    configuration file if it is given and found; otherwise a ``ValueError`` is
+    rasied if not found
     """
-    def __init__(self, opt_config, conf_var=None, *args, **kwargs):
+    def __init__(self, opt_config, config_env_name=None, *args, **kwargs):
         super(OneConfPerActionOptionsCliEnv, self).__init__(
             opt_config, *args, **kwargs)
-        if conf_var is None:
+        if config_env_name is None:
             self.default_config_file = None
         else:
-            conf_env_var = conf_var.upper()
+            conf_env_var = config_env_name.upper()
             if conf_env_var in os.environ:
                 default_config_file = os.environ[conf_env_var]
             else:
                 default_config_file = os.path.expanduser(
-                    '~/.{}'.format(conf_var))
+                    '~/.{}'.format(config_env_name))
             logger.debug('configured default config file: {}'.format(
                 default_config_file))
             self.default_config_file = default_config_file
