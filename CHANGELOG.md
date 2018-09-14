@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.0.8] - 2018-09-14
+### Changes
+- CLI bug fix.
+- Move to zensols.pybuild for build/release.
+
+
 ## [1.0.7] - 2018-09-14
 ### Changes
 - Environment configuration with resource files bug fixes and extensions.
@@ -81,7 +87,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.8...HEAD
+[1.0.8]: https://github.com/plandes/actioncli/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/plandes/actioncli/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/plandes/actioncli/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/plandes/actioncli/compare/v1.0.4...v1.0.5

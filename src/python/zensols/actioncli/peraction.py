@@ -213,7 +213,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
                      (conf, conf_name, params))
         if conf_file is not None:
             if not os.path.isfile(conf_file) and \
-               'expect' not in conf or conf['expect']:
+               ('expect' not in conf or conf['expect']):
                 raise IOError('no such configuration file: %s' % conf_file)
         return conf_file
 
