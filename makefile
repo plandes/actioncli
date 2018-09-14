@@ -2,8 +2,6 @@
 
 PROJ_TYPE=	python
 
-#PY_SRC_TEST_PKGS=help_format_test
-
 # make build dependencies
 _ :=	$(shell [ ! -d .git ] && git init ; [ ! -d zenbuild ] && \
 	  git submodule add https://github.com/plandes/zenbuild && make gitinit )
@@ -13,3 +11,7 @@ include ./zenbuild/main.mk
 .PHONY:	runexecout
 runexecout:
 	make PY_SRC_TEST_PKGS=executor_test.TestExecutor.run_sleep_out test
+
+.PHONY:	testclieenv
+testclieenv:
+	make PY_SRC_TEST_PKGS=actioncli_test.TestActionCli.test_env_conf_cli_env test

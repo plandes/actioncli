@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.0.7] - 2018-09-14
+### Changes
+- Environment configuration with resource files bug fixes and extensions.
+- More documentation and test cases to show how to use the environment based
+  CLI driver classes.
+
+
 ## [1.0.6] - 2018-09-01
 ### Changes
 - Package not found for out of order init order.
@@ -74,7 +81,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/plandes/actioncli/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/plandes/actioncli/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/plandes/actioncli/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/plandes/actioncli/compare/v1.0.3...v1.0.4

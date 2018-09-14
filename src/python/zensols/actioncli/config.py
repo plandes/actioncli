@@ -1,6 +1,7 @@
 import os
 import logging
 import configparser
+from pathlib import Path
 
 logger = logging.getLogger('zensols.actioncli.conf')
 
@@ -53,7 +54,7 @@ class Config(object):
 
     def get_options(self, section='default', opt_keys=None, vars=None):
         """
-        Get all options for a section.  If **opt_keys** is given return
+        Get all options for a section.  If ``opt_keys`` is given return
         only options with those keys.
         """
         vars = vars if vars else self.default_vars
@@ -76,9 +77,11 @@ class Config(object):
         return opts
 
     def get_option(self, name, section=None, vars=None, expect=False):
-        """
-        Return an option from **section** with **name**.  Parameter
-        **section** defaults to constructor's **default_section**.
+        """Return an option from ``section`` with ``name``.
+
+        :param section: section in the ini file to fetch the value; defaults to
+        constructor's ``default_section``
+
         """
         vars = vars if vars else self.default_vars
         if section is None:
@@ -93,19 +96,27 @@ class Config(object):
 
     def get_option_list(self, name, section=None, vars=None,
                         expect=False, separator=','):
-        """
-        Just like **get_option** but parse as a list using **split**.
+        """Just like ``get_option`` but parse as a list using ``split``.
+
         """
         val = self.get_option(name, section, vars, expect)
         return val.split(separator) if val else []
 
     def get_option_boolean(self, name, section=None, vars=None, expect=False):
-        """
-        Just like **get_option** but parse as a boolean (any case `true`).
+        """Just like ``get_option`` but parse as a boolean (any case `true`).
+
         """
         val = self.get_option(name, section, vars, expect)
         val = val.lower() if val else 'false'
         return val == 'true'
+
+    def get_option_path(self, name, section=None, vars=None, expect=False):
+        """Just like ``get_option`` but return a ``pathlib.Path`` object of
+        the string.
+
+        """
+        val = self.get_option(name, section, vars, expect)
+        return Path(val)
 
     @property
     def options(self):
@@ -119,6 +130,30 @@ class Config(object):
         if secs:
             return set(secs)
 
+    def populate(self, section, obj):
+        """Set attributes in ``obj`` with ``setattr`` from the all values in
+        ``section``.
+
+        """
+        for k, v in self.get_options(section).items():
+            try:
+                v = int(v)
+            except ValueError as e:
+                pass
+            logger.debug('setting {} => {} on {}'.format(k, v, obj))
+            setattr(obj, k, v)
+
     def __str__(self):
         return str('file: {}, section: {}'.
                    format(self.config_file, self.sections))
+
+
+class ExtendedInterpolationConfig(Config):
+    """Configuration class extends using advanced interpolation with
+    ``configparser.ExtendedInterpolation``.
+
+    """
+
+    def _create_config_parser(self):
+        inter = configparser.ExtendedInterpolation()
+        return configparser.ConfigParser(interpolation=inter)

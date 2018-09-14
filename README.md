@@ -81,7 +81,19 @@ def main():
     cl.invoke()
 ```
 
-See the [command line test cases](test/python/cmdop_test.py) for more examples.
+This uses the `OneConfPerActionOptionsCliEnv` class, which provides a data
+driven way of configuring the action based command line.  An extention of this
+class is the `OneConfPerActionOptionsCliEnv` class, which imports environment
+variables and allows adding to the configuration via adding a resource like
+file (i.e. `~/.<program name>rc`) type file.  See the
+
+See the [command line test cases](test/python/cli_env_test.py) for more
+examples.
+
+
+
+### Environment Configuration
+
 
 
 ## Changelog

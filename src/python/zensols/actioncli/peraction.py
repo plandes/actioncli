@@ -132,8 +132,9 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
     all in the configuration pased to the init method.
 
     """
-    def __init__(self, opt_config, **kwargs):
+    def __init__(self, opt_config, config_type=Config, **kwargs):
         self.opt_config = opt_config
+        self.config_type = config_type
         super(OneConfPerActionOptionsCli, self).__init__({}, {}, **kwargs)
 
     def _config_global(self, oc):
@@ -196,32 +197,42 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         self._log_config()
 
     def _create_config(self, conf_file, default_vars):
-        return Config(config_file=conf_file, default_vars=default_vars)
+        return self.config_type(
+            config_file=conf_file, default_vars=default_vars)
 
     def _get_default_config(self, params):
         return super(OneConfPerActionOptionsCli, self).get_config(params)
 
+    def _find_conf_file(self, conf, params):
+        conf_name = conf['name']
+        conf_file = params[conf_name]
+        logger.debug('config configuration: %s, name: %s, params: %s' %
+                     (conf, conf_name, params))
+        if conf_file is not None:
+            if not os.path.isfile(conf_file) and \
+               'expect' not in conf or conf['expect']:
+                raise IOError('no such configuration file: %s' % conf_file)
+        return conf_file
+
     def get_config(self, params):
         if not hasattr(self, 'config_opt_conf'):
-            return self._get_default_config(params)
+            conf = self._get_default_config(params)
         else:
-            conf = self.config_opt_conf
-            conf_name = conf['name']
-            logger.debug('config configuration: %s, name: %s, params: %s' %
-                         (conf, conf_name, params))
-            conf_file = params[conf_name]
-            if not conf_file:
-                return self._get_default_config(params)
-            if not os.path.isfile(conf_file):
-                if 'expect' in conf and not conf['expect']:
-                    return self._get_default_config(params)
-                raise IOError('no such configuration file: %s' % conf_file)
-            good_keys = filter(lambda x: params[x] is not None, params.keys())
-            defaults = {k: str(params[k]) for k in good_keys}
-            logger.debug('defaults: %s' % defaults)
-            conf = self._create_config(conf_file, defaults)
-            logger.debug('created config: %s' % conf)
-            return conf
+            conf_def = self.config_opt_conf
+            conf_file = self._find_conf_file(conf_def, params)
+            if conf_file is None:
+                conf = None
+            else:
+                good_keys = filter(lambda x: params[x] is not None,
+                                   params.keys())
+                defaults = {k: str(params[k]) for k in good_keys}
+                logger.debug('defaults: %s' % defaults)
+                conf = self._create_config(conf_file, defaults)
+                logger.debug('created config: %s' % conf)
+        if conf is None:
+            conf = self._get_default_config(params)
+        logger.debug('returning config: %s' % conf)
+        return conf
 
 
 class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
@@ -230,18 +241,44 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
     class.
 
     """
-    def __init__(self, opt_config, conf_var, *args, **kwargs):
-        super(PerActionOptionsCli, self).__init__(opt_config, *args, **kwargs)
-        conf_env_var = conf_var.upper()
-        if conf_env_var in os.environ:
-            default_config_file = os.environ[conf_env_var]
+    def __init__(self, opt_config, conf_var=None, *args, **kwargs):
+        super(OneConfPerActionOptionsCliEnv, self).__init__(
+            opt_config, *args, **kwargs)
+        if conf_var is None:
+            self.default_config_file = None
         else:
-            default_config_file = os.path.expanduser('~/.{}'.format(conf_var))
-        self.default_config_file = default_config_file
+            conf_env_var = conf_var.upper()
+            if conf_env_var in os.environ:
+                default_config_file = os.environ[conf_env_var]
+            else:
+                default_config_file = os.path.expanduser(
+                    '~/.{}'.format(conf_var))
+            logger.debug('configured default config file: {}'.format(
+                default_config_file))
+            self.default_config_file = default_config_file
 
     def _create_config(self, conf_file, default_vars):
         defs = {}
         defs.update(default_vars)
         defs.update(os.environ)
-        defs.update(self.default_config_file)
-        return Config(config_file=conf_file, default_vars=defs)
+        logger.debug('creating with conf_file: {}'.format(conf_file))
+        return super(OneConfPerActionOptionsCliEnv, self)._create_config(
+            conf_file, defs)
+
+    def _find_conf_file(self, conf, params):
+        logger.debug('finding config: {}'.format(self.default_config_file))
+        if self.default_config_file is None:
+            conf_file = super(OneConfPerActionOptionsCliEnv, self).\
+                _find_conf_file(conf, params)
+        else:
+            conf_name = conf['name']
+            conf_file = params[conf_name]
+            logger.debug('config: {}, name: {}, params: {}, default_config_file: {}'
+                         .format(conf, conf_name, params,
+                                 self.default_config_file))
+            if conf_file is None:
+                if os.path.isfile(self.default_config_file):
+                    conf_file = self.default_config_file
+                elif 'expect' in conf and conf['expect']:
+                    raise IOError('no such configuration file: %s' % conf_file)
+        return conf_file

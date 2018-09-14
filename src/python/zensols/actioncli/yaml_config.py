@@ -18,10 +18,10 @@ class YamlConfig(object):
 
     CLASS_VER = 0
 
-    def __init__(self, config_file=None, delimiter='$', default_vars=None):
+    def __init__(self, config_file=None, default_vars=None, delimiter='$', ):
         self.config_file = config_file
-        self.delimiter = delimiter
         self.default_vars = default_vars if default_vars else {}
+        self.delimiter = delimiter
 
     @classmethod
     def _is_primitive(cls, obj):

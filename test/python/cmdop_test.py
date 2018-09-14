@@ -4,9 +4,7 @@ from zensols.actioncli import Config
 from zensols.actioncli import PerActionOptionsCli
 from zensols.actioncli import OneConfPerActionOptionsCli
 
-# logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
-
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('zensols.test')
 
 
