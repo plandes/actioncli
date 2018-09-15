@@ -1,12 +1,15 @@
 import logging
 import subprocess
 
-from zensols.actioncli import LogConfigurer, StreamLogDumper
+from zensols.actioncli import StreamLogDumper
 
-logger = logging.getLogger('zneosls.actioncli.executor')
+
+logger = logging.getLogger('zensols.actioncli.executor')
+
 
 class Executor(object):
-    def __init__(self, logger, dry_run=False, check_exit_value=0, timeout=None):
+    def __init__(self, logger, dry_run=False, check_exit_value=0,
+                 timeout=None):
         self.logger = logger
         self.dry_run = dry_run
         self.check_exit_value = check_exit_value
@@ -18,11 +21,13 @@ class Executor(object):
             check_exit_value = self.check_exit_value
         logger.info('system <{}>'.format(cmd))
         if not self.dry_run:
-            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
             StreamLogDumper.dump(proc.stdout, proc.stderr, self.logger)
             proc.wait(self.timeout)
             ret = proc.returncode
-            logger.debug('exit value: {} =? {}'.format(ret, self.check_exit_value))
+            logger.debug('exit value: {} =? {}'.format(
+                ret, self.check_exit_value))
             if self.check_exit_value is not None and ret != check_exit_value:
                 msg = 'command returned with {}, expecting {}'.\
                       format(ret, self.check_exit_value)
