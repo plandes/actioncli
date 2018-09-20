@@ -74,7 +74,7 @@ class ConfAppCommandLine(OneConfPerActionOptionsCli):
 
 class TestHelpFormatter(unittest.TestCase):
     HELP = """\
-Usage: usage: python3 -m unittest <list|backupreallylong|mount|umount> [options]
+Usage: usage: python3 -m unittest <list|backupreallylong|info|mount|umount> [options]
 
 Options:
   --version             show program's version number and exit
@@ -85,6 +85,8 @@ Actions:
   backupreallylong  Run the backup
   -d, --dryrun                             dry run to not actually connect, but act like it
   -n, --sources <string>                   override the sources property in the config
+
+  info              Print backup configuration information
 
   mount             Mount all targets
   -d, --datadir <string>    ~/opt/datadir  the location of the Zotero data directory

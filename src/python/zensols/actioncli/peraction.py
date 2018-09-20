@@ -179,14 +179,15 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
             inv = [exec_name, meth, doc]
             logger.debug('inferred action: %s: %s' % (action, inv))
             self.invokes[action_name] = inv
-            if 'opts' in action:
-                aopts = gaopts[action_name] if action_name in gaopts else []
-                gaopts[action_name] = aopts
-                for opt in action['opts']:
-                    logger.debug('action opt: %s' % opt)
-                    opt_obj = self.make_option(opt[0], opt[1], **opt[3])
-                    logger.debug('action opt obj: %s' % opt_obj)
-                    aopts.append({'opt_obj': opt_obj, 'manditory': opt[2]})
+            if 'opts' not in action:
+                action['opts'] = ()
+            aopts = gaopts[action_name] if action_name in gaopts else []
+            gaopts[action_name] = aopts
+            for opt in action['opts']:
+                logger.debug('action opt: %s' % opt)
+                opt_obj = self.make_option(opt[0], opt[1], **opt[3])
+                logger.debug('action opt obj: %s' % opt_obj)
+                aopts.append({'opt_obj': opt_obj, 'manditory': opt[2]})
         self.executors[exec_name] = oc['executor']
 
     def config_parser(self):
