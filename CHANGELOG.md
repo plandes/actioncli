@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.0.9] - 2018-09-20
+### Changed
+- Better options handling.
+
 ## [1.0.8] - 2018-09-14
 ### Changes
 - CLI bug fix.
@@ -87,7 +91,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.8...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.9...HEAD
+[1.0.9]: https://github.com/plandes/actioncli/compare/v1.0.8...v1.0.9
 [1.0.8]: https://github.com/plandes/actioncli/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/plandes/actioncli/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/plandes/actioncli/compare/v1.0.5...v1.0.6
