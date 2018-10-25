@@ -15,3 +15,7 @@ runexecout:
 .PHONY:	testclieenv
 testclieenv:
 	make PY_SRC_TEST_PKGS=actioncli_test.TestActionCli.test_env_conf_cli_env test
+
+.PHONY:	testpersist
+testpersist:
+	make PY_SRC_TEST_PKGS=persist_test test

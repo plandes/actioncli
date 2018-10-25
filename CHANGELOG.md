@@ -6,11 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+### Added
+- Cache framework.
 
 
 ## [1.0.9] - 2018-09-20
 ### Changed
 - Better options handling.
+
 
 ## [1.0.8] - 2018-09-14
 ### Changes
