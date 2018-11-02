@@ -1,15 +1,16 @@
-#!/usr/bin/env python
-
-import unittest, logging, sys
+import unittest
+import logging
+import sys
 from configparser import NoSectionError
 from zensols.actioncli import Config
 
 logger = logging.getLogger('zneosls.config.test')
 
+
 class TestConfig(unittest.TestCase):
     def test_config(self):
         conf = Config('test-resources/config-test.conf')
-        self.assertEqual({'param1':'3.14'}, conf.options)
+        self.assertEqual({'param1': '3.14'}, conf.options)
 
     def test_config_single_opt(self):
         conf = Config('test-resources/config-test.conf')
@@ -40,9 +41,17 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(False, conf.get_option_boolean('no_such_param'))
         self.assertEqual([], conf.get_option_list('no_such_param'))
 
-def main(args=sys.argv[1:]):
-    logging.basicConfig(level=logging.DEBUG)
-    unittest.main()
-
-if __name__ == '__main__':
-    main()
+    def test_populate(self):
+        class Settings:
+            pass
+        conf = Config('test-resources/populate-test.conf')
+        s = Settings()
+        conf.populate(s)
+        self.assertEqual(s.param1, 3.14)
+        self.assertEqual(s.param2, 9)
+        self.assertEqual(s.param3, 10.1)
+        self.assertEqual(s.param4, -10.1)
+        self.assertEqual(s.param5, 'dog')
+        self.assertEqual(s.param6, True)
+        self.assertEqual(s.param7, False)
+        self.assertEqual(s.param8, None)

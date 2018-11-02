@@ -53,6 +53,28 @@ class HybridClass(object):
         return self.n * 2
 
 
+class PropertyOnlyClass(object):
+    def __init__(self, n):
+        self.n = n
+
+    @property
+    @persisted('_someprop')
+    def someprop(self):
+        self.n += 10
+        return self.n
+
+
+class GlobalTest(object):
+    def __init__(self, n):
+        self.n = n
+
+    @property
+    @persisted('_someprop', cache_global=True)
+    def someprop(self):
+        self.n += 10
+        return self.n
+
+
 class TestPersistWork(unittest.TestCase):
     def setUp(self):
         targdir = Path('target')
@@ -66,7 +88,7 @@ class TestPersistWork(unittest.TestCase):
         sc = SomeClass(10)
         self.assertEqual(20, sc.someprop)
         sc = SomeClass(5)
-        self.assertEqual(20, sc.someprop)
+        self.assertEqual(10, sc.someprop)
         sc = SomeClass(8)
         sc.counter.clear()
         self.assertEqual(16, sc.someprop)
@@ -97,9 +119,35 @@ class TestPersistWork(unittest.TestCase):
         sc = HybridClass(10)
         self.assertEqual(20, sc.someprop)
         sc = HybridClass(5)
-        self.assertEqual(20, sc.someprop)
+        self.assertEqual(10, sc.someprop)
         sc = HybridClass(8)
         # has to create the attribute first by callling
         sc.someprop
         sc.clear()
         self.assertEqual(16, sc.someprop)
+
+    def test_property_cache_only(self):
+        po = PropertyOnlyClass(100)
+        self.assertEqual(110, po.someprop)
+        po.n = 10
+        self.assertEqual(10, po.n)
+        self.assertEqual(110, po.someprop)
+        print(po._someprop.clear())
+        self.assertEqual(20, po.someprop)
+        po = PropertyOnlyClass(3)
+        self.assertEqual(13, po.someprop)
+
+    def test_global(self):
+        gt = GlobalTest(100)
+        self.assertEqual(110, gt.someprop)
+        gt = GlobalTest(10)
+        gt.n = 1
+        self.assertEqual(110, gt.someprop)
+        self.assertEqual(110, gt.someprop)
+
+    def test_set(self):
+        po = PropertyOnlyClass(5)
+        self.assertEqual(15, po.someprop)
+        self.assertEqual(PersistedWork, type(po._someprop))
+        po._someprop.set(20)
+        self.assertEqual(20, po.someprop)

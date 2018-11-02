@@ -1,9 +1,22 @@
 import os
 import logging
+import re
 import configparser
 from pathlib import Path
 
 logger = logging.getLogger('zensols.actioncli.conf')
+
+
+class Settings(object):
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def pprint(self):
+        from pprint import pprint
+        pprint(self.__dict__)
 
 
 class Config(object):
@@ -11,6 +24,11 @@ class Config(object):
     returns sets or subsets of options.
 
     """
+
+    FLOAT_REGEXP = re.compile(r'^[-+]?\d*\.\d+$')
+    INT_REGEXP = re.compile(r'^[-+]?[0-9]+$')
+    BOOL_REGEXP = re.compile(r'^True|False')
+
     def __init__(self, config_file=None, default_section='default',
                  robust=False, default_vars=None):
         """Create with a configuration file path.
@@ -130,18 +148,30 @@ class Config(object):
         if secs:
             return set(secs)
 
-    def populate(self, section, obj):
+    def populate(self, obj=None, section=None, parse_types=True):
         """Set attributes in ``obj`` with ``setattr`` from the all values in
         ``section``.
 
         """
+        section = self.default_section if section is None else section
+        obj = Settings() if obj is None else obj
+        is_dict = isinstance(obj, dict)
         for k, v in self.get_options(section).items():
-            try:
-                v = int(v)
-            except ValueError as e:
-                pass
+            if parse_types:
+                if self.FLOAT_REGEXP.match(v):
+                    v = float(v)
+                elif self.INT_REGEXP.match(v):
+                    v = int(v)
+                elif self.BOOL_REGEXP.match(v):
+                    v = v == 'True'
+                elif v == 'None':
+                    v = None
             logger.debug('setting {} => {} on {}'.format(k, v, obj))
-            setattr(obj, k, v)
+            if is_dict:
+                obj[k] = v
+            else:
+                setattr(obj, k, v)
+        return obj
 
     def __str__(self):
         return str('file: {}, section: {}'.

@@ -23,33 +23,33 @@ class PersistedWork(object):
     ``__do_work__``.
 
     """
-    def __init__(self, path, cache_global=False, owner=None, worker=None,
-                 use_disk=True):
+    def __init__(self, path, owner=None, cache_global=False, worker=None):
         """Create an instance of the class.
 
-        :param path: the path of the cached pickled data
+        :param path: if type of pathlib.Path then use disk storage to cache of
+          the pickeled data, otherwise a string used to store in the owner
         :param cache_global: cache the data globals; this shares data across
           instances but not classes
         :param worker: a callable used to create the data if not cached
         :param owner: an owning class to get and retrieve as an attribute
-        :param use_disk: if True, then persist results on the disk; useful for
-          when only in memory caching is desired
+
         """
         logger.debug('pw inst: path={}, global={}'.format(path, cache_global))
-        if isinstance(path, str):
-            path = Path(path)
-        self.path = path
-        self.cache_global = cache_global
-        self.owner = owner
-        self.worker = worker
-        self.use_disk = use_disk
-
-    @property
-    def varname(self):
-        if not hasattr(self, '_varname'):
+        if isinstance(path, Path):
+            self.path = path
+            self.use_disk = True
             fname = re.sub(r'[ /\\.]', '_', str(self.path.absolute()))
-            self._varname = '_pwv_{}'.format(fname)
-        return self._varname
+            self.varname = f'_pwvinst_{fname}'
+        else:
+            self.varname = f'_pwvinst_{path}'
+            self.path = Path(path)
+            self.use_disk = False
+        self.owner = owner
+        self.cache_global = cache_global
+        self.worker = worker
+
+    def _info(self, msg, *args):
+        logger.info(self.varname + ': ' + msg, *args)
 
     def clear(self):
         """Clear the data, and thus, force it to be created on the next fetch.  This is
@@ -71,7 +71,7 @@ class PersistedWork(object):
     def _do_work(self, *argv, **kwargs):
         t0 = time()
         obj = self.__do_work__(*argv, **kwargs)
-        logger.info('created work in {:2f}s, saving to {}'.format(
+        self._info('created work in {:2f}s, saving to {}'.format(
             (time() - t0), self.path))
         return obj
 
@@ -81,14 +81,23 @@ class PersistedWork(object):
         If the file does not exist, calling ``__do_work__`` and save it.
         """
         if self.path.exists():
-            logger.info('loading work from {}'.format(self.path))
+            self._info('loading work from {}'.format(self.path))
             with open(self.path, 'rb') as f:
                 obj = pickle.load(f)
         else:
+            self._info('saving work to {}'.format(self.path))
             with open(self.path, 'wb') as f:
                 obj = self._do_work(*argv, **kwargs)
                 pickle.dump(obj, f)
         return obj
+
+    def set(self, obj):
+        logger.debug(f'saving in memory value {type(obj)}')
+        vname = self.varname
+        setattr(self.owner, vname, obj)
+        if self.cache_global:
+            if vname not in globals():
+                globals()[vname] = obj
 
     def __call__(self, *argv, **kwargs):
         """Return the cached data if it doesn't yet exist.  If it doesn't exist, create
@@ -110,12 +119,9 @@ class PersistedWork(object):
             if self.use_disk:
                 obj = self._load_or_create(*argv, **kwargs)
             else:
+                self._info('invoking worker')
                 obj = self._do_work(*argv, **kwargs)
-            if self.cache_global:
-                vname = self.varname
-                if vname not in globals():
-                    globals()[vname] = obj
-        setattr(self.owner, vname, obj)
+        self.set(obj)
         return obj
 
     def __do_work__(self, *argv, **kwargs):
@@ -139,23 +145,31 @@ class persisted(object):
             return tuple(range(5))
     """
     def __init__(self, attr_name, path=None, cache_global=False):
-        logger.debug('persisted decorator on attr: {}'.format(attr_name))
+        logger.debug('persisted decorator on attr: {}, global={}'.format(
+            attr_name, cache_global))
         self.attr_name = attr_name
         self.path = path
         self.cache_global = cache_global
 
     def __call__(self, fn):
-        logger.debug('in call')
+        logger.debug(f'in call: {self.cache_global}')
+        lattr_name = self.attr_name
+        lpath = self.path
+        lcache_global = self.cache_global
 
         def wrapped(*argv, **kwargs):
-            logger.debug('in wrapped')
+            logger.debug(f'in wrapped {self.attr_name} ({lcache_global})')
             inst = argv[0]
-            if self.path is not None and not hasattr(inst, self.attr_name):
-                pwork = PersistedWork(
-                    self.path, owner=inst, cache_global=self.cache_global)
-                setattr(inst, self.attr_name, pwork)
+            if hasattr(inst, lattr_name):
+                pwork = getattr(inst, lattr_name)
             else:
-                pwork = getattr(inst, self.attr_name)
+                if lpath is None:
+                    path = lattr_name
+                else:
+                    path = Path(lpath)
+                pwork = PersistedWork(
+                    path, owner=inst, cache_global=lcache_global)
+                setattr(inst, lattr_name, pwork)
             pwork.worker = fn
             return pwork(*argv, **kwargs)
 
