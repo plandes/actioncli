@@ -174,3 +174,47 @@ class persisted(object):
             return pwork(*argv, **kwargs)
 
         return wrapped
+
+
+class resource(object):
+    """This annotation uses a template pattern to (de)allocate resources.  For
+    example, you can declare class methods to create database connections and
+    then close them.  This example looks like this:
+
+    class CrudManager(object):
+        def _create_connection(self):
+            return sqlite3.connect(':memory:')
+
+        def _dispose_connection(self, conn):
+            conn.close()
+
+        @resource('_create_connection', '_dispose_connection')
+        def commit_work(self, conn, obj):
+            conn.execute(...)
+
+    """
+    def __init__(self, create_method_name, destroy_method_name):
+        """Create the instance based annotation.
+
+        :param create_method_name: the name of the method that allocates
+        :param destroy_method_name: the name of the method that deallocates
+        """
+        logger.debug(f'connection decorator {create_method_name} ' +
+                     f'destructor method name: {destroy_method_name}')
+        self.create_method_name = create_method_name
+        self.destroy_method_name = destroy_method_name
+
+    def __call__(self, fn):
+        logger.debug(f'connection call with fn: {fn}')
+
+        def wrapped(*argv, **kwargs):
+            logger.debug(f'in wrapped {self.create_method_name}')
+            inst = argv[0]
+            resource = getattr(inst, self.create_method_name)()
+            try:
+                result = fn(inst, resource, *argv[1:], **kwargs)
+            finally:
+                getattr(inst, self.destroy_method_name)(resource)
+            return result
+
+        return wrapped
