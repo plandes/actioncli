@@ -26,4 +26,4 @@ testpersist:
 
 .PHONY:	testtask
 testtask:
-	make PY_SRC_TEST_PKGS=task_test test
+	make PY_SRC_TEST_PKGS=task_test.TestPersistTask test
