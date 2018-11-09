@@ -3,6 +3,7 @@ import logging
 import re
 import configparser
 from pathlib import Path
+import pkg_resources
 
 logger = logging.getLogger('zensols.actioncli.conf')
 
@@ -173,9 +174,26 @@ class Config(object):
                 setattr(obj, k, v)
         return obj
 
+    def resource_filename(self, resource_name):
+        """Return a resource based on a file name.  This uses the ``pkg_resources``
+        package first to find the resources.  If it doesn't find it, it returns
+        a path on the file system.
+
+        Returns: a path on the file system or resource of the installed module.
+
+        """
+        if pkg_resources.resource_exists(__name__, resource_name):
+            res = pkg_resources.resource_filename(__name__, resource_name)
+        else:
+            res = resource_name
+        return Path(res)
+
     def __str__(self):
         return str('file: {}, section: {}'.
                    format(self.config_file, self.sections))
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class ExtendedInterpolationConfig(Config):
