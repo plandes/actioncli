@@ -27,3 +27,11 @@ testpersist:
 .PHONY:	testtask
 testtask:
 	make PY_SRC_TEST_PKGS=task_test.TestPersistTask test
+
+.PHONY:	testtpopulate
+testtpopulate:
+	make PY_SRC_TEST_PKGS=populate_test test
+
+.PHONY:	testfactory
+testfactory:
+	make PY_SRC_TEST_PKGS=configfactory_test test

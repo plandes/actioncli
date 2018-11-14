@@ -49,7 +49,7 @@ class PersistedWork(object):
         self.worker = worker
 
     def _info(self, msg, *args):
-        logger.info(self.varname + ': ' + msg, *args)
+        logger.debug(self.varname + ': ' + msg, *args)
 
     def clear(self):
         """Clear the data, and thus, force it to be created on the next fetch.  This is

@@ -20,15 +20,75 @@ class Settings(object):
         pprint(self.__dict__)
 
 
-class Config(object):
+class Configurable(object):
+    FLOAT_REGEXP = re.compile(r'^[-+]?\d*\.\d+$')
+    INT_REGEXP = re.compile(r'^[-+]?[0-9]+$')
+    BOOL_REGEXP = re.compile(r'^True|False')
+    EVAL_REGEXP = re.compile(r'^eval:\s*(.+)$')
+
+    def __init__(self, config_file):
+        self.config_file = config_file
+
+    def get_option(self, name, expect=False):
+        raise ValueError('get_option is not implemented')
+
+    def get_options(self, name, expect=False):
+        raise ValueError('get_options is not implemented')
+
+    @property
+    def options(self):
+        raise ValueError('get_option is not implemented')
+
+    def populate(self, obj=None, section=None, parse_types=True):
+        """Set attributes in ``obj`` with ``setattr`` from the all values in
+        ``section``.
+
+        """
+        section = self.default_section if section is None else section
+        obj = Settings() if obj is None else obj
+        is_dict = isinstance(obj, dict)
+        for k, v in self.get_options(section).items():
+            if parse_types:
+                if v == 'None':
+                    v = None
+                elif self.FLOAT_REGEXP.match(v):
+                    v = float(v)
+                elif self.INT_REGEXP.match(v):
+                    v = int(v)
+                elif self.BOOL_REGEXP.match(v):
+                    v = v == 'True'
+                else:
+                    m = self.EVAL_REGEXP.match(v)
+                    if m:
+                        evalstr = m.group(1)
+                        v = eval(evalstr)
+            logger.debug('setting {} => {} on {}'.format(k, v, obj))
+            if is_dict:
+                obj[k] = v
+            else:
+                setattr(obj, k, v)
+        return obj
+
+    def resource_filename(self, resource_name):
+        """Return a resource based on a file name.  This uses the ``pkg_resources``
+        package first to find the resources.  If it doesn't find it, it returns
+        a path on the file system.
+
+        Returns: a path on the file system or resource of the installed module.
+
+        """
+        if pkg_resources.resource_exists(__name__, resource_name):
+            res = pkg_resources.resource_filename(__name__, resource_name)
+        else:
+            res = resource_name
+        return Path(res)
+
+
+class Config(Configurable):
     """Application configuration utility.  This reads from a configuration and
     returns sets or subsets of options.
 
     """
-
-    FLOAT_REGEXP = re.compile(r'^[-+]?\d*\.\d+$')
-    INT_REGEXP = re.compile(r'^[-+]?[0-9]+$')
-    BOOL_REGEXP = re.compile(r'^True|False')
 
     def __init__(self, config_file=None, default_section='default',
                  robust=False, default_vars=None):
@@ -40,7 +100,7 @@ class Config(object):
         :param bool robust: -- if `True`, then don't raise an error when the
                     configuration file is missing
         """
-        self.config_file = config_file
+        super(Config, self).__init__(config_file)
         self.default_section = default_section
         self.robust = robust
         self.default_vars = default_vars
@@ -92,6 +152,7 @@ class Config(object):
             copts = conf.options(section) if conf else {}
             opt_keys = set(opt_keys).intersection(set(copts))
         for option in opt_keys:
+            logger.debug(f'option: {option}, vars: {vars}')
             opts[option] = conf.get(section, option, vars=vars)
         return opts
 
@@ -149,45 +210,6 @@ class Config(object):
         if secs:
             return set(secs)
 
-    def populate(self, obj=None, section=None, parse_types=True):
-        """Set attributes in ``obj`` with ``setattr`` from the all values in
-        ``section``.
-
-        """
-        section = self.default_section if section is None else section
-        obj = Settings() if obj is None else obj
-        is_dict = isinstance(obj, dict)
-        for k, v in self.get_options(section).items():
-            if parse_types:
-                if self.FLOAT_REGEXP.match(v):
-                    v = float(v)
-                elif self.INT_REGEXP.match(v):
-                    v = int(v)
-                elif self.BOOL_REGEXP.match(v):
-                    v = v == 'True'
-                elif v == 'None':
-                    v = None
-            logger.debug('setting {} => {} on {}'.format(k, v, obj))
-            if is_dict:
-                obj[k] = v
-            else:
-                setattr(obj, k, v)
-        return obj
-
-    def resource_filename(self, resource_name):
-        """Return a resource based on a file name.  This uses the ``pkg_resources``
-        package first to find the resources.  If it doesn't find it, it returns
-        a path on the file system.
-
-        Returns: a path on the file system or resource of the installed module.
-
-        """
-        if pkg_resources.resource_exists(__name__, resource_name):
-            res = pkg_resources.resource_filename(__name__, resource_name)
-        else:
-            res = resource_name
-        return Path(res)
-
     def __str__(self):
         return str('file: {}, section: {}'.
                    format(self.config_file, self.sections))
@@ -205,3 +227,47 @@ class ExtendedInterpolationConfig(Config):
     def _create_config_parser(self):
         inter = configparser.ExtendedInterpolation()
         return configparser.ConfigParser(interpolation=inter)
+
+
+# class ConfigFactory(object):
+#     """Creates new instances of classes and configures them given data in a
+#     configuration ``Config`` instance.
+
+#     :param config: an instance of ``Configurable``
+#     :param pattern: the pattern of the section/name identifier to get kwargs to
+#         initialize the new instance of the object
+#     """
+
+#     def __init__(self, config: Configurable, pattern='{name}'):
+#         self.config = config
+#         self.pattern = pattern
+
+#     @classmethod
+#     def register(cls, instance_class, name=None):
+#         if name is None:
+#             name = instance_class.__name__
+#         cls.INSTANCE_CLASSES[name] = instance_class
+
+#     def instance(self, name='default', *args, **kwargs):
+#         sec = self.pattern.format(**{'name': name})
+#         logger.debug(f'section: {sec}')
+#         params = {}
+#         params.update(self.config.populate({}, section=sec))
+#         class_name = params['class_name']
+#         del params['class_name']
+#         params.update(kwargs)
+#         classes = {}
+#         classes.update(globals())
+#         classes.update(self.INSTANCE_CLASSES)
+#         logger.debug(f'looking up class: {class_name}')
+#         cls = classes[class_name]
+#         logger.debug(f'found class: {cls}')
+#         if logger.level >= logging.DEBUG:
+#             for k, v in params.items():
+#                 logger.debug(f'populating {k} -> {v} ({type(v)})')
+#         inst = cls(*args, **params)
+#         if hasattr(inst, 'set_config'):
+#             attr = getattr(inst, 'set_config')
+#             logger.debug(f'setting config on new instance on {attr}')
+#             attr(self.config, name)
+#         return inst

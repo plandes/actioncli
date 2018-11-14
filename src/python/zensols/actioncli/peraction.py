@@ -250,7 +250,8 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
     configuration file if it is given and found; otherwise a ``ValueError`` is
     rasied if not found
     """
-    def __init__(self, opt_config, config_env_name=None, *args, **kwargs):
+    def __init__(self, opt_config, config_env_name=None, no_os_environ=False,
+                 *args, **kwargs):
         super(OneConfPerActionOptionsCliEnv, self).__init__(
             opt_config, *args, **kwargs)
         if config_env_name is None:
@@ -265,11 +266,14 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
             logger.debug('configured default config file: {}'.format(
                 default_config_file))
             self.default_config_file = default_config_file
+        self.no_os_environ = no_os_environ
 
     def _create_config(self, conf_file, default_vars):
         defs = {}
         defs.update(default_vars)
-        defs.update(os.environ)
+        if not self.no_os_environ:
+            logger.debug(f'adding environment to config: {os.environ}')
+            defs.update(os.environ)
         logger.debug('creating with conf_file: {}'.format(conf_file))
         return super(OneConfPerActionOptionsCliEnv, self)._create_config(
             conf_file, defs)

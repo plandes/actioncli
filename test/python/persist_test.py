@@ -132,7 +132,7 @@ class TestPersistWork(unittest.TestCase):
         po.n = 10
         self.assertEqual(10, po.n)
         self.assertEqual(110, po.someprop)
-        print(po._someprop.clear())
+        po._someprop.clear()
         self.assertEqual(20, po.someprop)
         po = PropertyOnlyClass(3)
         self.assertEqual(13, po.someprop)
