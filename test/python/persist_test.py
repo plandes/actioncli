@@ -7,7 +7,6 @@ from zensols.actioncli import (
     PersistedWork, persisted, PersistableContainer
 )
 
-#logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -20,11 +19,7 @@ class SomeClass(object):
     @persisted('_sp')
     def someprop(self):
         logger.info('returning: {}'.format(self.n))
-        #return self.counter(self.n)
         return self.n * 2
-
-    # def do_work(self, num):
-    #     return num * 2
 
 
 class AnotherClass(object):

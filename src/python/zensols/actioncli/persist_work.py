@@ -24,7 +24,7 @@ class PersistedWork(object):
     ``__do_work__``.
 
     """
-    def __init__(self, path, owner=None, cache_global=False):#, worker=None):
+    def __init__(self, path, owner=None, cache_global=False):
         """Create an instance of the class.
 
         :param path: if type of pathlib.Path then use disk storage to cache of
@@ -59,9 +59,6 @@ class PersistedWork(object):
         del d['owner']
         del d['worker']
         return d
-
-    # def __setstate__(self, state):
-    #     self.__dict__.update(state)
 
     def clear(self):
         """Clear the data, and thus, force it to be created on the next fetch.  This is
@@ -147,35 +144,14 @@ class PersistedWork(object):
 class PersistableContainer(object):
     PERSIST_MARKER = (('_pm_',),)
 
-    # def __getstate__(self):
-    #     dc = copy(self.__dict__)
-    #     persists = {}
-    #     for k, v in dc.items():
-    #         if isinstance(v, PersistedWork):
-    #             if v is not None:
-    #                 if v.owner is not self:
-    #                     m = 'can only pickle when owner is outer class'
-    #                     raise ValueError(m)
-    #             persists[k] = (self.PERSIST_MARKER, v.__getstate__())
-    #         logger.debug(f'gs: {k} => {v}')
-    #     dc.update(persists)
-    #     return dc
-
     def __setstate__(self, state):
         logger.debug('HERE')
         for k, v in state.items():
             logger.debug(f'ss: {k} => {v}')
             if isinstance(v, PersistedWork):
                 logger.debug(f'worker: {v}')
-                # print(v.__dict__)
-                # print('F', self, v.worker_name, hasattr(self, v.worker_name))
-                # #print(getattr(self, '__str__'))
-                # print('P', property(v.worker_name).getter)
-                # print('X', v.worker_name in self.__dict__)
                 setattr(v, v.worker_name, property(v.worker_name).getter)
                 setattr(v, 'owner', self)
-                #fn = getattr(self, v.worker_name)
-                #logger.debug(f'worker: {v}: {fn}')
         self.__dict__.update(state)
 
 
