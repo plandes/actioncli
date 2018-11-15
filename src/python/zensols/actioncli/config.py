@@ -3,9 +3,10 @@ import logging
 import re
 import configparser
 from pathlib import Path
+import inspect
 import pkg_resources
 
-logger = logging.getLogger('zensols.actioncli.conf')
+logger = logging.getLogger(__name__)
 
 
 class Settings(object):
@@ -69,16 +70,40 @@ class Configurable(object):
                 setattr(obj, k, v)
         return obj
 
-    def resource_filename(self, resource_name):
+    def _get_calling_module(self):
+        """Get the last module in the call stack that is not this module or ``None`` if
+        the call originated from this module.
+
+        """
+        for frame in inspect.stack():
+            mod = inspect.getmodule(frame[0])
+            logger.debug(f'calling module: {mod}')
+            if mod is not None:
+                mod_name = mod.__name__
+                if mod_name != __name__:
+                    return mod
+
+    def resource_filename(self, resource_name, module_name=None):
         """Return a resource based on a file name.  This uses the ``pkg_resources``
         package first to find the resources.  If it doesn't find it, it returns
         a path on the file system.
 
-        Returns: a path on the file system or resource of the installed module.
+        :param: resource_name the file name of the resource to obtain (or name
+            if obtained from an installed module)
+        :param module_name: the name of the module to obtain the data, which
+            defaults to ``__name__``
+        :return: a path on the file system or resource of the installed module
 
         """
-        if pkg_resources.resource_exists(__name__, resource_name):
-            res = pkg_resources.resource_filename(__name__, resource_name)
+        if module_name is None:
+            mod = self._get_calling_module()
+            logger.debug(f'calling module: {mod}')
+            if mod is not None:
+                mod_name = mod.__name__
+        if module_name is None:
+            module_name = __name__
+        if pkg_resources.resource_exists(mod_name, resource_name):
+            res = pkg_resources.resource_filename(mod_name, resource_name)
         else:
             res = resource_name
         return Path(res)
@@ -227,47 +252,3 @@ class ExtendedInterpolationConfig(Config):
     def _create_config_parser(self):
         inter = configparser.ExtendedInterpolation()
         return configparser.ConfigParser(interpolation=inter)
-
-
-# class ConfigFactory(object):
-#     """Creates new instances of classes and configures them given data in a
-#     configuration ``Config`` instance.
-
-#     :param config: an instance of ``Configurable``
-#     :param pattern: the pattern of the section/name identifier to get kwargs to
-#         initialize the new instance of the object
-#     """
-
-#     def __init__(self, config: Configurable, pattern='{name}'):
-#         self.config = config
-#         self.pattern = pattern
-
-#     @classmethod
-#     def register(cls, instance_class, name=None):
-#         if name is None:
-#             name = instance_class.__name__
-#         cls.INSTANCE_CLASSES[name] = instance_class
-
-#     def instance(self, name='default', *args, **kwargs):
-#         sec = self.pattern.format(**{'name': name})
-#         logger.debug(f'section: {sec}')
-#         params = {}
-#         params.update(self.config.populate({}, section=sec))
-#         class_name = params['class_name']
-#         del params['class_name']
-#         params.update(kwargs)
-#         classes = {}
-#         classes.update(globals())
-#         classes.update(self.INSTANCE_CLASSES)
-#         logger.debug(f'looking up class: {class_name}')
-#         cls = classes[class_name]
-#         logger.debug(f'found class: {cls}')
-#         if logger.level >= logging.DEBUG:
-#             for k, v in params.items():
-#                 logger.debug(f'populating {k} -> {v} ({type(v)})')
-#         inst = cls(*args, **params)
-#         if hasattr(inst, 'set_config'):
-#             attr = getattr(inst, 'set_config')
-#             logger.debug(f'setting config on new instance on {attr}')
-#             attr(self.config, name)
-#         return inst

@@ -7,7 +7,7 @@ from time import time
 from queue import Queue
 import threading
 
-logger = logging.getLogger('zensols.actioncli.task')
+logger = logging.getLogger(__name__)
 
 
 class TaskQueue(Queue):

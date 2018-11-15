@@ -4,7 +4,7 @@ import pprint
 import copy
 from zensols.actioncli import Configurable
 
-logger = logging.getLogger('zensols.actioncli.yml')
+logger = logging.getLogger(__name__)
 
 
 class YamlConfig(Configurable):

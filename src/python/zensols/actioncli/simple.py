@@ -4,7 +4,7 @@ import os
 from optparse import OptionParser
 from pkg_resources import get_distribution, DistributionNotFound
 
-logger = logging.getLogger('zensols.actioncli')
+logger = logging.getLogger(__name__)
 
 
 class ActionCliError(Exception):

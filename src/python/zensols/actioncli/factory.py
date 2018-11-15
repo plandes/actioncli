@@ -2,7 +2,7 @@ import logging
 import inspect
 from zensols.actioncli import Configurable
 
-logger = logging.getLogger('zensols.actioncli.factory')
+logger = logging.getLogger(__name__)
 
 
 class ConfigFactory(object):

@@ -8,7 +8,7 @@ import optparse
 from optparse import OptionParser
 from zensols.actioncli import SimpleActionCli, Config
 
-logger = logging.getLogger('zensols.actioncli.peraction')
+logger = logging.getLogger(__name__)
 
 
 class PrintActionsOptionParser(OptionParser):

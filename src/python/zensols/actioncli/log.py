@@ -3,6 +3,7 @@ import sys
 import threading
 from io import StringIO
 
+
 class LoggerStream(object):
     """
     Each line of standard out/error becomes a logged line
@@ -80,7 +81,8 @@ class LogConfigurer(object):
             #err.setLevel(logging.DEBUG)
             #out.setLevel(logging.DEBUG)
             err.addFilter(LogLevelSetFilter({logging.ERROR}))
-            out.addFilter(LogLevelSetFilter({logging.WARNING, logging.INFO, logging.DEBUG}))
+            out.addFilter(LogLevelSetFilter(
+                {logging.WARNING, logging.INFO, logging.DEBUG}))
             self.config_handler(err)
         self.config_handler(out)
 

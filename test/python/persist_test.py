@@ -1,26 +1,30 @@
 import logging
 from pathlib import Path
+import pickle
+from io import BytesIO
 import unittest
 from zensols.actioncli import (
-    PersistedWork, persisted
+    PersistedWork, persisted, PersistableContainer
 )
 
-logger = logging.getLogger('zensols.test.persist')
+#logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class SomeClass(object):
     def __init__(self, n):
         self.n = n
-        self.counter = PersistedWork(
-            'target/tmp.dat', owner=self, worker=self.do_work)
+        self._sp = PersistedWork(Path('target/tmp.dat'), owner=self)
 
     @property
+    @persisted('_sp')
     def someprop(self):
         logger.info('returning: {}'.format(self.n))
-        return self.counter(self.n)
+        #return self.counter(self.n)
+        return self.n * 2
 
-    def do_work(self, num):
-        return num * 2
+    # def do_work(self, num):
+    #     return num * 2
 
 
 class AnotherClass(object):
@@ -28,13 +32,13 @@ class AnotherClass(object):
         self.n = n
 
     @property
-    @persisted('counter', 'target/tmp2.dat')
+    @persisted('counter', Path('target/tmp2.dat'))
     def someprop(self):
         return self.n * 2
 
 
 class YetAnotherClass(object):
-    @persisted('counter', 'target/tmp3.dat')
+    @persisted('counter', Path('target/tmp3.dat'))
     def get_prop(self, n):
         return n * 2
 
@@ -42,7 +46,8 @@ class YetAnotherClass(object):
 class HybridClass(object):
     def __init__(self, n):
         self.n = n
-        self._counter = PersistedWork('target/tmp4.dat', owner=self)
+        self._counter = PersistedWork(
+            Path('target/tmp4.dat'), owner=self)
 
     def clear(self):
         self._counter.clear()
@@ -53,7 +58,7 @@ class HybridClass(object):
         return self.n * 2
 
 
-class PropertyOnlyClass(object):
+class PropertyOnlyClass(PersistableContainer):
     def __init__(self, n):
         self.n = n
 
@@ -86,16 +91,22 @@ class TestPersistWork(unittest.TestCase):
 
     def test_class_meth(self):
         sc = SomeClass(10)
+        path = Path('target/tmp.dat')
+        self.assertFalse(path.exists())
         self.assertEqual(20, sc.someprop)
+        self.assertTrue(path.exists())
         sc = SomeClass(5)
-        self.assertEqual(10, sc.someprop)
+        self.assertEqual(20, sc.someprop)
         sc = SomeClass(8)
-        sc.counter.clear()
+        sc._sp.clear()
         self.assertEqual(16, sc.someprop)
 
     def test_property_meth(self):
         sc = AnotherClass(10)
+        path = Path('target/tmp2.dat')
+        self.assertFalse(path.exists())
         self.assertEqual(20, sc.someprop)
+        self.assertTrue(path.exists())
         sc = AnotherClass(5)
         self.assertEqual(20, sc.someprop)
         sc = AnotherClass(8)
@@ -106,7 +117,10 @@ class TestPersistWork(unittest.TestCase):
 
     def test_getter_meth(self):
         sc = YetAnotherClass()
+        path = Path('target/tmp3.dat')
+        self.assertFalse(path.exists())
         self.assertEqual(20, sc.get_prop(10))
+        self.assertTrue(path.exists())
         sc = YetAnotherClass()
         self.assertEqual(20, sc.get_prop(5))
         sc = YetAnotherClass()
@@ -117,9 +131,12 @@ class TestPersistWork(unittest.TestCase):
 
     def test_hybrid_meth(self):
         sc = HybridClass(10)
+        path = Path('target/tmp4.dat')
+        self.assertFalse(path.exists())
         self.assertEqual(20, sc.someprop)
+        self.assertTrue(path.exists())
         sc = HybridClass(5)
-        self.assertEqual(10, sc.someprop)
+        self.assertEqual(20, sc.someprop)
         sc = HybridClass(8)
         # has to create the attribute first by callling
         sc.someprop
@@ -151,3 +168,29 @@ class TestPersistWork(unittest.TestCase):
         self.assertEqual(PersistedWork, type(po._someprop))
         po._someprop.set(20)
         self.assertEqual(20, po.someprop)
+
+    def _freeze_thaw(self, o):
+        bio = BytesIO()
+        pickle.dump(o, bio)
+        data = bio.getvalue()
+        bio2 = BytesIO(data)
+        return pickle.load(bio2)
+
+    def Xtest_pickle(self):
+        sc = SomeClass(5)
+        path = Path('target/tmp.dat')
+        self.assertFalse(path.exists())
+        self.assertEqual(10, sc.someprop)
+        self.assertTrue(path.exists())
+        self.assertEqual(10, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(10, sc2.someprop)
+
+    def test_pickle2(self):
+        logging.getLogger('zensols.actioncli.persist_work').setLevel(
+            logging.DEBUG)
+        sc = PropertyOnlyClass(2)
+        self.assertEqual(12, sc.someprop)
+        self.assertEqual(12, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(12, sc2.someprop)

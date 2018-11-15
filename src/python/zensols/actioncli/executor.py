@@ -2,7 +2,7 @@ import logging
 import subprocess
 from zensols.actioncli import StreamLogDumper
 
-logger = logging.getLogger('zensols.actioncli.executor')
+logger = logging.getLogger(__name__)
 
 
 class Executor(object):
