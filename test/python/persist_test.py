@@ -53,6 +53,21 @@ class HybridClass(object):
         return self.n * 2
 
 
+class HybridClassPickle(PersistableContainer):
+    def __init__(self, n):
+        self.n = n
+        self._counter = PersistedWork(
+            Path('target/tmp4.dat'), owner=self)
+
+    def clear(self):
+        self._counter.clear()
+
+    @property
+    @persisted('_counter')
+    def someprop(self):
+        return self.n * 2
+
+
 class PropertyOnlyClass(PersistableContainer):
     def __init__(self, n):
         self.n = n
@@ -210,3 +225,13 @@ class TestPersistWork(unittest.TestCase):
         self.assertEqual(12, sc.someprop)
         sc2 = self._freeze_thaw(sc)
         self.assertEqual(12, sc2.someprop)
+
+    def test_pickle_hybrid(self):
+        logging.getLogger('zensols.actioncli.persist_work').setLevel(
+            logging.DEBUG)
+        sc = HybridClassPickle(2)
+        # fails because of global name collision
+        self.assertEqual(4, sc.someprop)
+        self.assertEqual(4, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(4, sc2.someprop)
