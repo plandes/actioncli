@@ -36,13 +36,14 @@ class PersistedWork(object):
 
         """
         logger.debug('pw inst: path={}, global={}'.format(path, cache_global))
+        cstr = owner.__module__ + '.' + owner.__class__.__name__
         if isinstance(path, Path):
             self.path = path
             self.use_disk = True
             fname = re.sub(r'[ /\\.]', '_', str(self.path.absolute()))
-            self.varname = f'_pwvinst_{fname}'
+            self.varname = f'_{cstr}_{fname}_pwvinst'
         else:
-            self.varname = f'_pwvinst_{path}'
+            self.varname = f'_{cstr}_{path}_pwvinst'
             self.path = Path(path)
             self.use_disk = False
         self.owner = owner
@@ -142,10 +143,7 @@ class PersistedWork(object):
 
 
 class PersistableContainer(object):
-    PERSIST_MARKER = (('_pm_',),)
-
     def __setstate__(self, state):
-        logger.debug('HERE')
         for k, v in state.items():
             logger.debug(f'ss: {k} => {v}')
             if isinstance(v, PersistedWork):

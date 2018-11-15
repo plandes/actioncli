@@ -10,7 +10,7 @@ from zensols.actioncli import (
 logger = logging.getLogger(__name__)
 
 
-class SomeClass(object):
+class SomeClass(PersistableContainer):
     def __init__(self, n):
         self.n = n
         self._sp = PersistedWork(Path('target/tmp.dat'), owner=self)
@@ -75,6 +75,17 @@ class GlobalTest(object):
         return self.n
 
 
+class GlobalTestPickle(PersistableContainer):
+    def __init__(self, n):
+        self.n = n
+
+    @property
+    @persisted('_someprop', cache_global=True)
+    def someprop(self):
+        self.n += 10
+        return self.n
+
+
 class TestPersistWork(unittest.TestCase):
     def setUp(self):
         targdir = Path('target')
@@ -83,6 +94,13 @@ class TestPersistWork(unittest.TestCase):
             if p.exists():
                 p.unlink()
         targdir.mkdir(0o0755, exist_ok=True)
+
+    def _freeze_thaw(self, o):
+        bio = BytesIO()
+        pickle.dump(o, bio)
+        data = bio.getvalue()
+        bio2 = BytesIO(data)
+        return pickle.load(bio2)
 
     def test_class_meth(self):
         sc = SomeClass(10)
@@ -164,14 +182,7 @@ class TestPersistWork(unittest.TestCase):
         po._someprop.set(20)
         self.assertEqual(20, po.someprop)
 
-    def _freeze_thaw(self, o):
-        bio = BytesIO()
-        pickle.dump(o, bio)
-        data = bio.getvalue()
-        bio2 = BytesIO(data)
-        return pickle.load(bio2)
-
-    def Xtest_pickle(self):
+    def test_pickle(self):
         sc = SomeClass(5)
         path = Path('target/tmp.dat')
         self.assertFalse(path.exists())
@@ -181,10 +192,20 @@ class TestPersistWork(unittest.TestCase):
         sc2 = self._freeze_thaw(sc)
         self.assertEqual(10, sc2.someprop)
 
-    def test_pickle2(self):
+    def test_pickle_proponly(self):
         logging.getLogger('zensols.actioncli.persist_work').setLevel(
             logging.DEBUG)
         sc = PropertyOnlyClass(2)
+        self.assertEqual(12, sc.someprop)
+        self.assertEqual(12, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(12, sc2.someprop)
+
+    def test_pickle_global(self):
+        logging.getLogger('zensols.actioncli.persist_work').setLevel(
+            logging.DEBUG)
+        sc = GlobalTestPickle(2)
+        # fails because of global name collision
         self.assertEqual(12, sc.someprop)
         self.assertEqual(12, sc.someprop)
         sc2 = self._freeze_thaw(sc)
