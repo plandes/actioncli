@@ -5,7 +5,7 @@ from io import BytesIO
 import unittest
 from zensols.actioncli import (
     PersistedWork, persisted, PersistableContainer,
-    DirectoryStash
+    DirectoryStash, ShelveStash,
 )
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -123,8 +123,11 @@ class TransientPickleOverride(TransientPickle):
 class TestPersistWork(unittest.TestCase):
     def setUp(self):
         targdir = Path('target')
-        for f in 'tmp tmp2 tmp3 tmp4 tmp5'.split():
+        for f in 'tmp tmp2 tmp3 tmp4 tmp5 tmp6'.split():
             p = Path(targdir, f + '.dat')
+            if p.exists():
+                p.unlink()
+            p = Path(targdir, f + '.db')
             if p.exists():
                 p.unlink()
         targdir.mkdir(0o0755, exist_ok=True)
@@ -297,7 +300,7 @@ class TestPersistWork(unittest.TestCase):
         self.assertEqual(14, sc3.someprop)
         self.assertEqual(TransientPickle, type(sc3))
 
-    def test_stash(self):
+    def test_dir_stash(self):
         path = Path('target')
         file_path = path / 'tmp5.dat'
         s = DirectoryStash(path)
@@ -310,4 +313,20 @@ class TestPersistWork(unittest.TestCase):
         o2 = s.load('tmp5')
         self.assertEqual(obj, o2)
         s.delete('tmp5')
+        self.assertFalse(file_path.exists())
+
+    def test_shelve_stash(self):
+        path = Path('target')
+        file_path = path / 'tmp6.db'
+        create_path = path / 'tmp6'
+        s = ShelveStash(create_path)
+        self.assertFalse(file_path.exists())
+        obj = 'obj create of tmp6'
+        self.assertEqual(None, s.load('tmp6'))
+        self.assertTrue(file_path.exists())
+        s.dump('tmp6', obj)
+        self.assertTrue(file_path.exists())
+        o2 = s.load('tmp6')
+        self.assertEqual(obj, o2)
+        s.delete('tmp6')
         self.assertFalse(file_path.exists())

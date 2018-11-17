@@ -4,6 +4,7 @@ from copy import copy
 import pickle
 from time import time
 from pathlib import Path
+import shelve as sh
 
 logger = logging.getLogger(__name__)
 
@@ -274,13 +275,21 @@ class resource(object):
 
 
 class Stash(object):
-    def load(self, name=None, *args, **kwargs):
+    def load(self, name):
+        pass
+
+    def exists(self, name):
         pass
 
     def dump(self, name, inst):
         pass
 
     def delete(self, name):
+        pass
+
+
+class CloseableStash(Stash):
+    def close(self):
         pass
 
 
@@ -295,8 +304,7 @@ class DirectoryStash(Stash):
             self.create_path.mkdir(parents=True)
         return Path(self.create_path, fname)
 
-    def load(self, name=None):
-        name = self.default_name if name is None else name
+    def load(self, name):
         path = self._get_instance_path(name)
         inst = None
         if path.exists():
@@ -305,6 +313,10 @@ class DirectoryStash(Stash):
                 inst = pickle.load(f)
         logger.debug(f'loaded instance: {inst}')
         return inst
+
+    def exists(self, name):
+        path = self._get_instance_path(name)
+        return path.exists()
 
     def dump(self, name, inst):
         logger.info(f'saving instance: {inst}')
@@ -317,3 +329,48 @@ class DirectoryStash(Stash):
         path = self._get_instance_path(name)
         if path.exists():
             path.unlink()
+
+    def close(self):
+        pass
+
+
+class ShelveStash(CloseableStash):
+    def __init__(self, create_path: Path, writeback=False):
+        self.create_path = create_path
+        self.writeback = writeback
+
+    @property
+    @persisted('_shelve')
+    def shelve(self):
+        logger.info('creating shelve data')
+        fname = str(self.create_path.absolute())
+        inst = sh.open(fname, writeback=self.writeback)
+        self.is_open = True
+        return inst
+
+    def load(self, name):
+        if self.exists(name):
+            return self.shelve[name]
+
+    def dump(self, name, inst):
+        self.shelve[name] = inst
+
+    def exists(self, name):
+        return name in self.shelve
+
+    def delete(self, _=None):
+        logger.info('clearing shelve data')
+        self.close()
+        path = Path(self.create_path.parent, self.create_path.name + '.db')
+        logger.debug(f'clearing {path} if exists: {path.exists()}')
+        if path.exists():
+            path.unlink()
+
+    def close(self):
+        if self.is_open:
+            logger.info('closing shelve data')
+            try:
+                self.shelve.close()
+                self._shelve.clear()
+            except Exception:
+                self.is_open = False
