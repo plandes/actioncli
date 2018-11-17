@@ -4,7 +4,8 @@ import pickle
 from io import BytesIO
 import unittest
 from zensols.actioncli import (
-    PersistedWork, persisted, PersistableContainer
+    PersistedWork, persisted, PersistableContainer,
+    DirectoryStash
 )
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -122,7 +123,7 @@ class TransientPickleOverride(TransientPickle):
 class TestPersistWork(unittest.TestCase):
     def setUp(self):
         targdir = Path('target')
-        for f in 'tmp tmp2 tmp3 tmp4'.split():
+        for f in 'tmp tmp2 tmp3 tmp4 tmp5'.split():
             p = Path(targdir, f + '.dat')
             if p.exists():
                 p.unlink()
@@ -295,3 +296,18 @@ class TestPersistWork(unittest.TestCase):
         self.assertEqual(13, sc2.someprop)
         self.assertEqual(14, sc3.someprop)
         self.assertEqual(TransientPickle, type(sc3))
+
+    def test_stash(self):
+        path = Path('target')
+        file_path = path / 'tmp5.dat'
+        s = DirectoryStash(path)
+        self.assertFalse(file_path.exists())
+        obj = 'obj create of tmp5'
+        self.assertEqual(None, s.load('tmp5'))
+        self.assertFalse(file_path.exists())
+        s.dump('tmp5', obj)
+        self.assertTrue(file_path.exists())
+        o2 = s.load('tmp5')
+        self.assertEqual(obj, o2)
+        s.delete('tmp5')
+        self.assertFalse(file_path.exists())

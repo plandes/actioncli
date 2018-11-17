@@ -2,7 +2,10 @@ import logging
 import inspect
 import pickle
 from pathlib import Path
-from zensols.actioncli import Configurable
+from zensols.actioncli import (
+    Configurable,
+    DirectoryStash,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,42 +86,22 @@ class ConfigFactory(object):
 
 
 class ConfigManager(ConfigFactory):
-    def __init__(self, config: Configurable, create_path: Path,
-                 *args, **kwargs):
+    def __init__(self, config: Configurable, stash, *args, **kwargs):
         super(ConfigManager, self).__init__(config, *args, **kwargs)
-        self.create_path = create_path
-
-    def _get_instance_path(self, name):
-        pat = self.pattern + '.dat'
-        fname = pat.format(**{'name': name})
-        if not self.create_path.exists():
-            self.create_path.mkdir(parents=True)
-        return Path(self.create_path, fname)
+        self.stash = stash
 
     def load(self, name=None, *args, **kwargs):
-        name = self.default_name if name is None else name
-        path = self._get_instance_path(name)
-        if path.exists():
-            logger.info(f'loading instance from {path}')
-            with open(path, 'rb') as f:
-                inst = pickle.load(f)
-        else:
-            logger.info(f'creating (load) new instance of {name}')
-            inst = self.instance(name, *args, **kwargs)
-        logger.debug(f'loaded instance: {inst}')
+        inst = self.stash.load(name)
+        if inst is None:
+            inst = self.instance(*args, **kwargs)
+        logger.debug(f'loaded (conf mng) instance: {inst}')
         return inst
 
     def dump(self, inst):
-        logger.info(f'saving instance: {inst}')
-        path = self._get_instance_path(inst.name)
-        with open(path, 'wb') as f:
-            pickle.dump(inst, f)
+        self.stash.dump(inst)
 
     def delete(self, name):
-        logger.info(f'deleting instance: {name}')
-        path = self._get_instance_path(name)
-        if path.exists():
-            path.unlink()
+        self.stash.delete(name)
 
 
 class SingleClassConfigManager(ConfigManager):

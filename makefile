@@ -22,7 +22,7 @@ testconfig:
 
 .PHONY:	testpersist
 testpersist:
-#	make PY_SRC_TEST_PKGS=persist_test.TestPersistWork.test_pickle_transient test
+#	make PY_SRC_TEST_PKGS=persist_test.TestPersistWork.test_stash test
 	make PY_SRC_TEST_PKGS=persist_test test
 
 .PHONY:	testtask
@@ -35,4 +35,5 @@ testtpopulate:
 
 .PHONY:	testfactory
 testfactory:
-	make PY_SRC_TEST_PKGS=configfactory_test test
+#	make PY_SRC_TEST_PKGS=configfactory_test test
+	make PY_SRC_TEST_PKGS=configfactory_test.TestConfigFactory.test_config_mng test

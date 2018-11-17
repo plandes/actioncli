@@ -1,8 +1,11 @@
 import unittest
 import logging
+from pathlib import Path
 from zensols.actioncli import (
     Config,
     ConfigFactory,
+    ConfigManager,
+    DirectoryStash,
 )
 
 logger = logging.getLogger('zneosls.configfactory.test')
@@ -26,10 +29,9 @@ WidgetFactory.register(SimpleWidget)
 
 
 class ConfigInitWidget(object):
-    def __init__(self, param1, param2=None, config=None, name=None):
-        logger.debug(f'params: {param1}, {param2}, config={config}')
+    def __init__(self, param1, config=None, name=None):
+        logger.debug(f'params: {param1}, config={config}')
         self.param1 = param1
-        self.param2 = param2
         self.config = config
         self.name = name
 
@@ -37,10 +39,26 @@ class ConfigInitWidget(object):
 WidgetFactory.register(ConfigInitWidget)
 
 
+class WidgetManager(ConfigManager):
+    INSTANCE_CLASSES = {}
+
+    def __init__(self, config):
+        super(WidgetManager, self).__init__(
+            config,
+            stash=DirectoryStash(create_path=Path('target'),
+                                 pattern='{name}_widget_from_mng'),
+            pattern='{name}_widget_from_mng',
+            default_name='defname')
+
+
+WidgetManager.register(ConfigInitWidget)
+
+
 class TestConfigFactory(unittest.TestCase):
     def setUp(self):
         self.config = Config('test-resources/config-factory.conf')
         self.factory = WidgetFactory(self.config)
+        self.manager = WidgetManager(self.config)
 
     def test_simple(self):
         w = self.factory.instance('cool')
@@ -76,3 +94,7 @@ class TestConfigFactory(unittest.TestCase):
         w = self.factory.instance('confi_pass', 'ip1')
         self.assertEqual('ip1', w.param1)
         self.assertEqual('ip2', w.param2)
+
+    def test_config_mng(self):
+        w = self.manager.instance('confi_pass')
+        self.assertEqual('ip3', w.param1)

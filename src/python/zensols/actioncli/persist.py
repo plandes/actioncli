@@ -271,3 +271,43 @@ class resource(object):
             return result
 
         return wrapped
+
+
+class Stash(object):
+    def load(self, name=None, *args, **kwargs):
+        pass
+
+
+class DirectoryStash(object):
+    def __init__(self, create_path: Path, pattern='{name}.dat'):
+        self.create_path = create_path
+        self.pattern = pattern
+
+    def _get_instance_path(self, name):
+        fname = self.pattern.format(**{'name': name})
+        if not self.create_path.exists():
+            self.create_path.mkdir(parents=True)
+        return Path(self.create_path, fname)
+
+    def load(self, name=None):
+        name = self.default_name if name is None else name
+        path = self._get_instance_path(name)
+        inst = None
+        if path.exists():
+            logger.info(f'loading instance from {path}')
+            with open(path, 'rb') as f:
+                inst = pickle.load(f)
+        logger.debug(f'loaded instance: {inst}')
+        return inst
+
+    def dump(self, name, inst):
+        logger.info(f'saving instance: {inst}')
+        path = self._get_instance_path(name)
+        with open(path, 'wb') as f:
+            pickle.dump(inst, f)
+
+    def delete(self, name):
+        logger.info(f'deleting instance: {name}')
+        path = self._get_instance_path(name)
+        if path.exists():
+            path.unlink()
