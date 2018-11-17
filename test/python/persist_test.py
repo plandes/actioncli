@@ -7,6 +7,7 @@ from zensols.actioncli import (
     PersistedWork, persisted, PersistableContainer
 )
 
+#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -101,6 +102,23 @@ class GlobalTestPickle(PersistableContainer):
         return self.n
 
 
+class TransientPickle(PersistableContainer):
+    def __init__(self, n):
+        self.n = n
+
+    @property
+    @persisted('_someprop', transient=True)
+    def someprop(self):
+        self.n += 10
+        return self.n
+
+
+class TransientPickleOverride(TransientPickle):
+    def __setstate__(self, state):
+        super(TransientPickleOverride, self).__setstate__(state)
+        self.n = 40
+
+
 class TestPersistWork(unittest.TestCase):
     def setUp(self):
         targdir = Path('target')
@@ -134,6 +152,7 @@ class TestPersistWork(unittest.TestCase):
         path = Path('target/tmp2.dat')
         self.assertFalse(path.exists())
         self.assertEqual(20, sc.someprop)
+        self.assertTrue(isinstance(sc.counter, PersistedWork))
         self.assertTrue(path.exists())
         sc = AnotherClass(5)
         self.assertEqual(20, sc.someprop)
@@ -148,6 +167,7 @@ class TestPersistWork(unittest.TestCase):
         path = Path('target/tmp3.dat')
         self.assertFalse(path.exists())
         self.assertEqual(20, sc.get_prop(10))
+        self.assertTrue(isinstance(sc.counter, PersistedWork))
         self.assertTrue(path.exists())
         sc = YetAnotherClass()
         self.assertEqual(20, sc.get_prop(5))
@@ -174,6 +194,7 @@ class TestPersistWork(unittest.TestCase):
     def test_property_cache_only(self):
         po = PropertyOnlyClass(100)
         self.assertEqual(110, po.someprop)
+        self.assertTrue(isinstance(po._someprop, PersistedWork))
         po.n = 10
         self.assertEqual(10, po.n)
         self.assertEqual(110, po.someprop)
@@ -205,33 +226,72 @@ class TestPersistWork(unittest.TestCase):
         self.assertTrue(path.exists())
         self.assertEqual(10, sc.someprop)
         sc2 = self._freeze_thaw(sc)
+        self.assertEqual(SomeClass, type(sc2))
         self.assertEqual(10, sc2.someprop)
 
     def test_pickle_proponly(self):
-        logging.getLogger('zensols.actioncli.persist_work').setLevel(
-            logging.DEBUG)
         sc = PropertyOnlyClass(2)
         self.assertEqual(12, sc.someprop)
         self.assertEqual(12, sc.someprop)
         sc2 = self._freeze_thaw(sc)
+        self.assertEqual(PropertyOnlyClass, type(sc2))
         self.assertEqual(12, sc2.someprop)
 
     def test_pickle_global(self):
-        logging.getLogger('zensols.actioncli.persist_work').setLevel(
-            logging.DEBUG)
         sc = GlobalTestPickle(2)
         # fails because of global name collision
         self.assertEqual(12, sc.someprop)
         self.assertEqual(12, sc.someprop)
         sc2 = self._freeze_thaw(sc)
+        self.assertEqual(GlobalTestPickle, type(sc2))
         self.assertEqual(12, sc2.someprop)
 
     def test_pickle_hybrid(self):
-        logging.getLogger('zensols.actioncli.persist_work').setLevel(
-            logging.DEBUG)
         sc = HybridClassPickle(2)
         # fails because of global name collision
         self.assertEqual(4, sc.someprop)
         self.assertEqual(4, sc.someprop)
         sc2 = self._freeze_thaw(sc)
+        self.assertEqual(HybridClassPickle, type(sc2))
         self.assertEqual(4, sc2.someprop)
+
+    def test_pickle_transient(self):
+        sc = TransientPickle(10)
+        sc.n = 2
+        # fails because of global name collision
+        self.assertEqual(12, sc.someprop)
+        self.assertEqual(12, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(TransientPickle, type(sc2))
+        logger.debug('setting sc2.n')
+        # should recalculate from updated value instead of hanging on to old
+        sc2.n = 3
+        self.assertEqual(13, sc2.someprop)
+
+    def test_pickle_transient_override(self):
+        sc = TransientPickleOverride(2)
+        # fails because of global name collision
+        self.assertEqual(12, sc.someprop)
+        self.assertEqual(12, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(TransientPickleOverride, type(sc2))
+        self.assertEqual(50, sc2.someprop)
+
+    def test_pickle_transient_two_pass(self):
+        sc = TransientPickle(10)
+        sc.n = 2
+        # fails because of global name collision
+        self.assertEqual(12, sc.someprop)
+        self.assertEqual(12, sc.someprop)
+        sc2 = self._freeze_thaw(sc)
+        self.assertEqual(TransientPickle, type(sc2))
+        logger.debug('setting sc2.n')
+        # should recalculate from updated value instead of hanging on to old
+        sc2.n = 3
+        self.assertEqual(13, sc2.someprop)
+        sc3 = self._freeze_thaw(sc)
+        sc3.n = 4
+        self.assertEqual(12, sc.someprop)
+        self.assertEqual(13, sc2.someprop)
+        self.assertEqual(14, sc3.someprop)
+        self.assertEqual(TransientPickle, type(sc3))

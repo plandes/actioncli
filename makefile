@@ -22,6 +22,7 @@ testconfig:
 
 .PHONY:	testpersist
 testpersist:
+#	make PY_SRC_TEST_PKGS=persist_test.TestPersistWork.test_pickle_transient test
 	make PY_SRC_TEST_PKGS=persist_test test
 
 .PHONY:	testtask

@@ -1,5 +1,7 @@
 import logging
 import inspect
+import pickle
+from pathlib import Path
 from zensols.actioncli import Configurable
 
 logger = logging.getLogger(__name__)
@@ -15,11 +17,13 @@ class ConfigFactory(object):
     """
 
     def __init__(self, config: Configurable, pattern='{name}',
-                 config_param_name='config', name_param_name='name'):
+                 config_param_name='config', name_param_name='name',
+                 default_name='default'):
         self.config = config
         self.pattern = pattern
         self.config_param_name = config_param_name
         self.name_param_name = name_param_name
+        self.default_name = default_name
 
     @classmethod
     def register(cls, instance_class, name=None):
@@ -57,7 +61,9 @@ class ConfigFactory(object):
         logger.debug(f'args: {args}, kwargs: {kwargs}')
         return cls(*args, **kwargs)
 
-    def instance(self, name='default', *args, **kwargs):
+    def instance(self, name=None, *args, **kwargs):
+        logger.info(f'new instance of {name}')
+        name = self.default_name if name is None else name
         logger.debug(f'creating instance of {name}')
         class_name, params = self._class_name_params(name)
         cls = self._find_class(class_name)
@@ -71,4 +77,102 @@ class ConfigFactory(object):
         if logger.level >= logging.DEBUG:
             for k, v in params.items():
                 logger.debug(f'populating {k} -> {v} ({type(v)})')
-        return self._instance(cls, *args, **params)
+        inst = self._instance(cls, *args, **params)
+        logger.debug(f'created instance: {inst}')
+        return inst
+
+
+class ConfigManager(ConfigFactory):
+    def __init__(self, config: Configurable, create_path: Path,
+                 *args, **kwargs):
+        super(ConfigManager, self).__init__(config, *args, **kwargs)
+        self.create_path = create_path
+
+    def _get_instance_path(self, name):
+        pat = self.pattern + '.dat'
+        fname = pat.format(**{'name': name})
+        if not self.create_path.exists():
+            self.create_path.mkdir(parents=True)
+        return Path(self.create_path, fname)
+
+    def load(self, name=None, *args, **kwargs):
+        name = self.default_name if name is None else name
+        path = self._get_instance_path(name)
+        if path.exists():
+            logger.info(f'loading instance from {path}')
+            with open(path, 'rb') as f:
+                inst = pickle.load(f)
+        else:
+            logger.info(f'creating (load) new instance of {name}')
+            inst = self.instance(name, *args, **kwargs)
+        logger.debug(f'loaded instance: {inst}')
+        return inst
+
+    def dump(self, inst):
+        logger.info(f'saving instance: {inst}')
+        path = self._get_instance_path(inst.name)
+        with open(path, 'wb') as f:
+            pickle.dump(inst, f)
+
+    def delete(self, name):
+        logger.info(f'deleting instance: {name}')
+        path = self._get_instance_path(name)
+        if path.exists():
+            path.unlink()
+
+
+class SingleClassConfigManager(ConfigManager):
+    def __init__(self, config, cls, *args, **kwargs):
+        super(SingleClassConfigManager, self).__init__(config, *args, **kwargs)
+        self.cls = cls
+
+    def _find_class(self, class_name):
+        return self.cls
+
+    def _class_name_params(self, name):
+        sec = self.pattern.format(**{'name': name})
+        logger.debug(f'section: {sec}')
+        params = {}
+        params.update(self.config.populate({}, section=sec))
+        return None, params
+
+
+class CachingConfigFactory(object):
+    def __init__(self, delegate):
+        self.delegate = delegate
+        self.insts = {}
+
+    def instance(self, name=None, *args, **kwargs):
+        logger.debug(f'cache config instance for {name}')
+        if name in self.insts:
+            logger.debug(f'reusing cached instance of {name}')
+            return self.insts[name]
+        else:
+            logger.debug(f'creating new instance of {name}')
+            inst = self.delegate.instance(name, *args, **kwargs)
+            self.insts[name] = inst
+            return inst
+
+    def load(self, name=None, *args, **kwargs):
+        if name in self.insts:
+            logger.debug(f'reusing (load) cached instance of {name}')
+            return self.insts[name]
+        else:
+            logger.debug(f'load new instance of {name}')
+            inst = self.delegate.load(name, *args, **kwargs)
+            self.insts[name] = inst
+            return inst
+
+    def dump(self, inst):
+        self.delegate.dump(inst)
+
+    def delete(self, name):
+        self.delegate.delete(name)
+        self.evict(name)
+
+    def evict(self, name):
+        if name in self.insts:
+            del self.insts[name]
+
+    def evict_all(self):
+        self.insts.clear()

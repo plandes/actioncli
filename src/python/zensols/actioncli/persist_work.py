@@ -24,42 +24,35 @@ class PersistedWork(object):
     ``__do_work__``.
 
     """
-    def __init__(self, path, owner=None, cache_global=False):
+    def __init__(self, path, owner, cache_global=False, transient=False):
         """Create an instance of the class.
 
-        :param path: if type of pathlib.Path then use disk storage to cache of
-          the pickeled data, otherwise a string used to store in the owner
-        :param cache_global: cache the data globals; this shares data across
-          instances but not classes
-        :param worker: a callable used to create the data if not cached
+        :param path: if type of ``pathlib.Path`` then use disk storage to cache
+            of the pickeled data, otherwise a string used to store in the owner
+        :type path: pathlib.Path or str
         :param owner: an owning class to get and retrieve as an attribute
+        :param cache_global: cache the data globals; this shares data across
+            instances but not classes
 
         """
         logger.debug('pw inst: path={}, global={}'.format(path, cache_global))
-        cstr = owner.__module__ + '.' + owner.__class__.__name__
+        self.owner = owner
+        self.cache_global = cache_global
+        self.transient = transient
+        self.worker = None
         if isinstance(path, Path):
             self.path = path
             self.use_disk = True
             fname = re.sub(r'[ /\\.]', '_', str(self.path.absolute()))
-            self.varname = f'_{cstr}_{fname}_pwvinst'
         else:
-            self.varname = f'_{cstr}_{path}_pwvinst'
             self.path = Path(path)
             self.use_disk = False
-        self.owner = owner
-        self.cache_global = cache_global
-        self.worker = None
+            fname = str(path)
+        cstr = owner.__module__ + '.' + owner.__class__.__name__
+        self.varname = f'_{cstr}_{fname}_pwvinst'
 
     def _info(self, msg, *args):
         logger.debug(self.varname + ': ' + msg, *args)
-
-    def __getstate__(self):
-        d = copy(self.__dict__)
-        if self.worker is not None:
-            d['worker_name'] = self.worker.__name__
-        del d['owner']
-        del d['worker']
-        return d
 
     def clear(self):
         """Clear the data, and thus, force it to be created on the next fetch.  This is
@@ -109,6 +102,21 @@ class PersistedWork(object):
             if vname not in globals():
                 globals()[vname] = obj
 
+    def __getstate__(self):
+        """We must null out the owner and worker as they are not pickelable.
+
+        :seealso: PersistableContainer
+
+        """
+        d = copy(self.__dict__)
+        # if self.worker is not None:
+        #     d['worker_name'] = self.worker.__name__
+        # del d['owner']
+        # del d['worker']
+        d['owner'] = None
+        d['worker'] = None
+        return d
+
     def __call__(self, *argv, **kwargs):
         """Return the cached data if it doesn't yet exist.  If it doesn't exist, create
         it and cache it on the file system, optionally ``owner`` and optionally
@@ -143,14 +151,36 @@ class PersistedWork(object):
 
 
 class PersistableContainer(object):
-    def __setstate__(self, state):
+    """Classes can extend this that want to persist ``PersistableWork`` instances,
+    which otherwise are not persistable.
+
+    """
+    def __getstate__(self):
+        state = copy(self.__dict__)
+        removes = []
         for k, v in state.items():
-            logger.debug(f'ss: {k} => {v}')
+            logger.debug(f'container get state: {k} => {v}')
             if isinstance(v, PersistedWork):
-                logger.debug(f'worker: {v}')
-                setattr(v, v.worker_name, property(v.worker_name).getter)
-                setattr(v, 'owner', self)
+                if v.transient:
+                    removes.append(v.varname)
+        for k in removes:
+            #del state[k]
+            state[k] = None
+        return state
+
+    def __setstate__(self, state):
+        """Set the owner to containing instance and the worker function to the owner's
+        function by name.
+
+        """
         self.__dict__.update(state)
+        for k, v in state.items():
+            logger.debug(f'container set state: {k} => {v}')
+            if isinstance(v, PersistedWork):
+                #logger.debug(f'worker: {v.worker_name} => {v}')
+                #setattr(self, v.worker_name, property(v.worker_name).getter)
+                #delattr(v, 'worker_name')
+                setattr(v, 'owner', self)
 
 
 class persisted(object):
@@ -165,32 +195,34 @@ class persisted(object):
         def someprop(self):
             return tuple(range(5))
     """
-    def __init__(self, attr_name, path=None, cache_global=False):
+    def __init__(self, attr_name, path=None, cache_global=False,
+                 transient=False):
         logger.debug('persisted decorator on attr: {}, global={}'.format(
             attr_name, cache_global))
         self.attr_name = attr_name
         self.path = path
         self.cache_global = cache_global
+        self.transient = transient
 
     def __call__(self, fn):
-        logger.debug(f'in call: {self.cache_global}')
-        lattr_name = self.attr_name
-        lpath = self.path
-        lcache_global = self.cache_global
+        logger.debug(f'call: {fn}:{self.attr_name}:{self.path}:' +
+                     f'{self.cache_global}')
 
         def wrapped(*argv, **kwargs):
-            logger.debug(f'in wrapped {self.attr_name} ({lcache_global})')
             inst = argv[0]
-            if hasattr(inst, lattr_name):
-                pwork = getattr(inst, lattr_name)
+            logger.debug(f'wrap: {fn}:{self.attr_name}:{self.path}:' +
+                         f'{self.cache_global}')
+            if hasattr(inst, self.attr_name):
+                pwork = getattr(inst, self.attr_name)
             else:
-                if lpath is None:
-                    path = lattr_name
+                if self.path is None:
+                    path = self.attr_name
                 else:
-                    path = Path(lpath)
+                    path = Path(self.path)
                 pwork = PersistedWork(
-                    path, owner=inst, cache_global=lcache_global)
-                setattr(inst, lattr_name, pwork)
+                    path, owner=inst, cache_global=self.cache_global,
+                    transient=self.transient)
+                setattr(inst, self.attr_name, pwork)
             pwork.worker = fn
             return pwork(*argv, **kwargs)
 
