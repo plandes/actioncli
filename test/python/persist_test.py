@@ -5,7 +5,7 @@ from io import BytesIO
 import unittest
 from zensols.actioncli import (
     PersistedWork, persisted, PersistableContainer,
-    DirectoryStash, ShelveStash,
+    DirectoryStash, ShelveStash, shelve,
 )
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -123,7 +123,7 @@ class TransientPickleOverride(TransientPickle):
 class TestPersistWork(unittest.TestCase):
     def setUp(self):
         targdir = Path('target')
-        for f in 'tmp tmp2 tmp3 tmp4 tmp5 tmp6'.split():
+        for f in 'tmp tmp2 tmp3 tmp4 tmp5 tmp6 tmp7'.split():
             p = Path(targdir, f + '.dat')
             if p.exists():
                 p.unlink()
@@ -330,3 +330,17 @@ class TestPersistWork(unittest.TestCase):
         self.assertEqual(obj, o2)
         s.delete('tmp6')
         self.assertFalse(file_path.exists())
+
+    def test_shelve_stash_with(self):
+        path = Path('target')
+        file_path = path / 'tmp7.db'
+        create_path = path / 'tmp7'
+        self.assertFalse(file_path.exists())
+        with shelve(create_path) as s:
+            self.assertFalse(s.exists('cool'))
+        self.assertTrue(file_path.exists())
+        with shelve(create_path) as s:
+            s.dump('cool', [1, 2, 123])
+            self.assertTrue([1, 2, 123], s.load('cool'))
+        with shelve(create_path) as s:
+            self.assertTrue([1, 2, 123], s.load('cool'))

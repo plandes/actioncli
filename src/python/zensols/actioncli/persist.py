@@ -335,9 +335,10 @@ class DirectoryStash(Stash):
 
 
 class ShelveStash(CloseableStash):
-    def __init__(self, create_path: Path, writeback=False):
+    def __init__(self, create_path: Path, writeback=True):
         self.create_path = create_path
         self.writeback = writeback
+        self.is_open = False
 
     @property
     @persisted('_shelve')
@@ -358,7 +359,7 @@ class ShelveStash(CloseableStash):
     def exists(self, name):
         return name in self.shelve
 
-    def delete(self, _=None):
+    def delete(self, *args):
         logger.info('clearing shelve data')
         self.close()
         path = Path(self.create_path.parent, self.create_path.name + '.db')
@@ -374,3 +375,14 @@ class ShelveStash(CloseableStash):
                 self._shelve.clear()
             except Exception:
                 self.is_open = False
+
+
+class shelve(object):
+    def __init__(self, *args, **kwargs):
+        self.shelve = ShelveStash(*args, **kwargs)
+
+    def __enter__(self):
+        return self.shelve
+
+    def __exit__(self, type, value, traceback):
+        self.shelve.close()
