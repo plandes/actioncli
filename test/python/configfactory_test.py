@@ -29,9 +29,10 @@ WidgetFactory.register(SimpleWidget)
 
 
 class ConfigInitWidget(object):
-    def __init__(self, param1, config=None, name=None):
-        logger.debug(f'params: {param1}, config={config}')
+    def __init__(self, param1, param2=None, config=None, name=None):
+        logger.debug(f'params: {param1}, {param2}, config={config}')
         self.param1 = param1
+        self.param2 = param2
         self.config = config
         self.name = name
 

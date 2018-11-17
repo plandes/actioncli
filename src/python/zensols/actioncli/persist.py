@@ -277,8 +277,14 @@ class Stash(object):
     def load(self, name=None, *args, **kwargs):
         pass
 
+    def dump(self, name, inst):
+        pass
 
-class DirectoryStash(object):
+    def delete(self, name):
+        pass
+
+
+class DirectoryStash(Stash):
     def __init__(self, create_path: Path, pattern='{name}.dat'):
         self.create_path = create_path
         self.pattern = pattern
