@@ -275,30 +275,55 @@ class resource(object):
 
 
 class Stash(object):
-    def load(self, name):
+    """Pure virtual clsss that represents CRUDing data.  The data is usually CRUDed
+    to the file system but need not be.
+
+    """
+    def load(self, name: str):
+        "Load a data value from the pickled data with key ``name``."
         pass
 
-    def exists(self, name):
+    def exists(self, name: str):
+        "Return ``True`` if data with key ``name`` exists."
         pass
 
-    def dump(self, name, inst):
+    def dump(self, name: str, inst):
+        "Persist data value ``inst`` with key ``name``."
         pass
 
-    def delete(self, name):
+    def delete(self, name=None):
+        """Delete the resource for data pointed to by ``name`` or the entire resource
+        if ``name`` is not given.
+
+        """
         pass
 
 
 class CloseableStash(Stash):
     def close(self):
+
+        "Close all resources created by the stash."
         pass
 
 
 class DirectoryStash(Stash):
+    """Creates a pickeled data file with a file name in a directory with a given
+    pattern across all instances.
+
+    """
     def __init__(self, create_path: Path, pattern='{name}.dat'):
-        self.create_path = create_path
+        """Create a stash.
+
+        :param create_path: the directory of where to store the files
+        :param pattern: the file name portion with ``name`` populating to the
+            key of the data value
+
+        """
         self.pattern = pattern
+        self.create_path = create_path
 
     def _get_instance_path(self, name):
+        "Return a path to the pickled data with key ``name``."
         fname = self.pattern.format(**{'name': name})
         if not self.create_path.exists():
             self.create_path.mkdir(parents=True)
@@ -359,7 +384,7 @@ class ShelveStash(CloseableStash):
     def exists(self, name):
         return name in self.shelve
 
-    def delete(self, *args):
+    def delete(self, name=None):
         logger.info('clearing shelve data')
         self.close()
         path = Path(self.create_path.parent, self.create_path.name + '.db')

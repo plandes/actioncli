@@ -1,11 +1,6 @@
 import logging
 import inspect
-import pickle
-from pathlib import Path
-from zensols.actioncli import (
-    Configurable,
-    DirectoryStash,
-)
+from zensols.actioncli import Configurable
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +13,26 @@ class ConfigFactory(object):
     :param pattern: the pattern of the section/name identifier to get kwargs to
         initialize the new instance of the object
     """
-
     def __init__(self, config: Configurable, pattern='{name}',
                  config_param_name='config', name_param_name='name',
                  default_name='default'):
+        """Initialize.
+
+        :param config: the configuration used to create the instance; all data
+            from the corresponding section is given to the ``__init__`` method
+
+        :param pattern: section pattern used to find the values given to the
+        ``__init__`` method
+
+        :param config_param_name: the ``__init__`` parameter name used for the
+            configuration object given to the factory's ``instance`` method;
+            defaults to ``config``
+
+        :param config_param_name: the ``__init__`` parameter name used for the
+            instance name given to the factory's ``instance`` method; defaults
+            to ``name``
+
+        """
         self.config = config
         self.pattern = pattern
         self.config_param_name = config_param_name
@@ -30,11 +41,20 @@ class ConfigFactory(object):
 
     @classmethod
     def register(cls, instance_class, name=None):
+        """Register a class with the factory.
+
+        :param instance_class: the class to register with the factory (not a
+            string)
+        :param name: the name to use as the key for instance class lookups;
+            defaults to the name of the class
+
+        """
         if name is None:
             name = instance_class.__name__
         cls.INSTANCE_CLASSES[name] = instance_class
 
     def _find_class(self, class_name):
+        "Resolve the class from the name."
         classes = {}
         classes.update(globals())
         classes.update(self.INSTANCE_CLASSES)
@@ -44,6 +64,7 @@ class ConfigFactory(object):
         return cls
 
     def _class_name_params(self, name):
+        "Get the class name and parameters to use for ``__init__``."
         sec = self.pattern.format(**{'name': name})
         logger.debug(f'section: {sec}')
         params = {}
@@ -53,18 +74,40 @@ class ConfigFactory(object):
         return class_name, params
 
     def _has_init_config(self, cls):
+        """Return whether the class has a ``config`` parameter in the ``__init__``
+        method.
+
+        """
         args = inspect.signature(cls.__init__)
         return self.config_param_name in args.parameters
 
     def _has_init_name(self, cls):
+        """Return whether the class has a ``name`` parameter in the ``__init__``
+        method.
+
+        """
         args = inspect.signature(cls.__init__)
         return self.name_param_name in args.parameters
 
     def _instance(self, cls, *args, **kwargs):
+        """Return the instance.
+
+        :param cls: the class to create the instance from
+        :param args: given to the ``__init__`` method
+        :param kwargs: given to the ``__init__`` method
+        """
         logger.debug(f'args: {args}, kwargs: {kwargs}')
         return cls(*args, **kwargs)
 
     def instance(self, name=None, *args, **kwargs):
+        """Create a new instance using key ``name``.
+
+        :param name: the name of the class (by default) or the key name of the
+            class used to find the class
+        :param args: given to the ``__init__`` method
+        :param kwargs: given to the ``__init__`` method
+
+        """
         logger.info(f'new instance of {name}')
         name = self.default_name if name is None else name
         logger.debug(f'creating instance of {name}')
@@ -86,26 +129,47 @@ class ConfigFactory(object):
 
 
 class ConfigManager(ConfigFactory):
+    """Like ``ConfigFactory`` base saves off instances (really CRUDs).
+
+    """
     def __init__(self, config: Configurable, stash, *args, **kwargs):
+        """
+        """
         super(ConfigManager, self).__init__(config, *args, **kwargs)
         self.stash = stash
 
     def load(self, name=None, *args, **kwargs):
+        "Load the instance of the object from the stash."
         inst = self.stash.load(name)
         if inst is None:
             inst = self.instance(*args, **kwargs)
         logger.debug(f'loaded (conf mng) instance: {inst}')
         return inst
 
-    def dump(self, inst):
-        self.stash.dump(inst)
+    def exists(self, name: str):
+        "Return ``True`` if data with key ``name`` exists."
+        pass
 
-    def delete(self, name):
+    def dump(self, name: str, inst):
+        "Save the object instance to the stash."
+        self.stash.dump(name, inst)
+
+    def delete(self, name=None):
+        "Delete the object instance from the backing store."
         self.stash.delete(name)
 
 
 class SingleClassConfigManager(ConfigManager):
-    def __init__(self, config, cls, *args, **kwargs):
+    """A configuration manager that specifies a single class.  This is useful when
+    you don't want to specify the class in the configuration.
+
+    """
+    def __init__(self, config: Configurable, cls, *args, **kwargs):
+        """Initialize.
+
+        :param config: the configuration object
+        :param cls: the class used to create each instance
+        """
         super(SingleClassConfigManager, self).__init__(config, *args, **kwargs)
         self.cls = cls
 
@@ -121,7 +185,16 @@ class SingleClassConfigManager(ConfigManager):
 
 
 class CachingConfigFactory(object):
-    def __init__(self, delegate):
+    """Just like ``ConfigFactory`` but caches instances in memory by name.
+
+    """
+    def __init__(self, delegate: ConfigFactory):
+        """Initialize.
+
+        :param delegate: the delegate factory to use for the actual instance
+            creation
+
+        """
         self.delegate = delegate
         self.insts = {}
 
