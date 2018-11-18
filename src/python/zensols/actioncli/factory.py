@@ -1,6 +1,9 @@
 import logging
 import inspect
-from zensols.actioncli import Configurable
+from zensols.actioncli import (
+    Configurable,
+    Stash,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -132,8 +135,13 @@ class ConfigManager(ConfigFactory):
     """Like ``ConfigFactory`` base saves off instances (really CRUDs).
 
     """
-    def __init__(self, config: Configurable, stash, *args, **kwargs):
-        """
+    def __init__(self, config: Configurable, stash: Stash, *args, **kwargs):
+        """Initialize.
+
+        :param config: the configuration object used to configure the new
+            instance
+        :param stash: the stash object used to persist instances
+
         """
         super(ConfigManager, self).__init__(config, *args, **kwargs)
         self.stash = stash
@@ -142,7 +150,7 @@ class ConfigManager(ConfigFactory):
         "Load the instance of the object from the stash."
         inst = self.stash.load(name)
         if inst is None:
-            inst = self.instance(*args, **kwargs)
+            inst = self.instance(name, *args, **kwargs)
         logger.debug(f'loaded (conf mng) instance: {inst}')
         return inst
 
@@ -219,8 +227,8 @@ class CachingConfigFactory(object):
             self.insts[name] = inst
             return inst
 
-    def dump(self, inst):
-        self.delegate.dump(inst)
+    def dump(self, name: str, inst):
+        self.delegate.dump(name, inst)
 
     def delete(self, name):
         self.delegate.delete(name)

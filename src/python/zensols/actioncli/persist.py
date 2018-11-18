@@ -360,7 +360,18 @@ class DirectoryStash(Stash):
 
 
 class ShelveStash(CloseableStash):
+    """Stash that uses Python's shelve library to store key/value pairs in dbm
+    (like) databases.
+
+    """
     def __init__(self, create_path: Path, writeback=True):
+        """Initialize.
+
+        :param create_path: a file to be created to store and/or load for the
+            data storage
+        :param writeback: the writeback parameter given to ``shelve``
+
+        """
         self.create_path = create_path
         self.writeback = writeback
         self.is_open = False
@@ -368,6 +379,9 @@ class ShelveStash(CloseableStash):
     @property
     @persisted('_shelve')
     def shelve(self):
+        """Return an opened shelve object.
+
+        """
         logger.info('creating shelve data')
         fname = str(self.create_path.absolute())
         inst = sh.open(fname, writeback=self.writeback)
@@ -385,6 +399,7 @@ class ShelveStash(CloseableStash):
         return name in self.shelve
 
     def delete(self, name=None):
+        "Delete the shelve data file."
         logger.info('clearing shelve data')
         self.close()
         path = Path(self.create_path.parent, self.create_path.name + '.db')
@@ -393,6 +408,7 @@ class ShelveStash(CloseableStash):
             path.unlink()
 
     def close(self):
+        "Close the shelve object, which is needed for data consistency."
         if self.is_open:
             logger.info('closing shelve data')
             try:
@@ -403,6 +419,7 @@ class ShelveStash(CloseableStash):
 
 
 class shelve(object):
+    "Object used with a ``with`` scope that creates the closes a shelve object."
     def __init__(self, *args, **kwargs):
         self.shelve = ShelveStash(*args, **kwargs)
 
