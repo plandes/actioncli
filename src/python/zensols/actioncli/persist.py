@@ -5,6 +5,7 @@ import pickle
 from time import time
 from pathlib import Path
 import shelve as sh
+from abc import abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +111,6 @@ class PersistedWork(object):
 
         """
         d = copy(self.__dict__)
-        # if self.worker is not None:
-        #     d['worker_name'] = self.worker.__name__
-        # del d['owner']
-        # del d['worker']
         d['owner'] = None
         d['worker'] = None
         return d
@@ -165,7 +162,6 @@ class PersistableContainer(object):
                 if v.transient:
                     removes.append(v.varname)
         for k in removes:
-            #del state[k]
             state[k] = None
         return state
 
@@ -178,9 +174,6 @@ class PersistableContainer(object):
         for k, v in state.items():
             logger.debug(f'container set state: {k} => {v}')
             if isinstance(v, PersistedWork):
-                #logger.debug(f'worker: {v.worker_name} => {v}')
-                #setattr(self, v.worker_name, property(v.worker_name).getter)
-                #delattr(v, 'worker_name')
                 setattr(v, 'owner', self)
 
 
@@ -279,24 +272,44 @@ class Stash(object):
     to the file system but need not be.
 
     """
+    @abstractmethod
     def load(self, name: str):
         "Load a data value from the pickled data with key ``name``."
         pass
 
+    @abstractmethod
     def exists(self, name: str):
         "Return ``True`` if data with key ``name`` exists."
         pass
 
+    @abstractmethod
     def dump(self, name: str, inst):
         "Persist data value ``inst`` with key ``name``."
         pass
 
+    @abstractmethod
     def delete(self, name=None):
         """Delete the resource for data pointed to by ``name`` or the entire resource
         if ``name`` is not given.
 
         """
         pass
+
+    def __getitem__(self, key):
+        exists = self.exists(key)
+        item = self.load(key)
+        if not exists:
+            self.dump(key, item)
+        return item
+
+    def __setitem__(self, key, value):
+        self.dump(key, value)
+
+    def __delitem__(self, key):
+        self.delete(key)
+
+    def __contains__(self, key):
+        return self.exists(key)
 
 
 class CloseableStash(Stash):
@@ -364,7 +377,7 @@ class ShelveStash(CloseableStash):
     (like) databases.
 
     """
-    def __init__(self, create_path: Path, writeback=True):
+    def __init__(self, create_path: Path, writeback=False):
         """Initialize.
 
         :param create_path: a file to be created to store and/or load for the
@@ -419,7 +432,9 @@ class ShelveStash(CloseableStash):
 
 
 class shelve(object):
-    "Object used with a ``with`` scope that creates the closes a shelve object."
+    """Object used with a ``with`` scope that creates the closes a shelve object.
+
+    """
     def __init__(self, *args, **kwargs):
         self.shelve = ShelveStash(*args, **kwargs)
 

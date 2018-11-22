@@ -1,5 +1,6 @@
 import logging
 import inspect
+from time import time
 from zensols.actioncli import (
     Configurable,
     Stash,
@@ -112,6 +113,7 @@ class ConfigFactory(object):
 
         """
         logger.info(f'new instance of {name}')
+        t0 = time()
         name = self.default_name if name is None else name
         logger.debug(f'creating instance of {name}')
         class_name, params = self._class_name_params(name)
@@ -127,7 +129,8 @@ class ConfigFactory(object):
             for k, v in params.items():
                 logger.debug(f'populating {k} -> {v} ({type(v)})')
         inst = self._instance(cls, *args, **params)
-        logger.debug(f'created instance: {inst}')
+        logger.info(f'created {name} instance of {cls.__name__} ' +
+                    f'in {(time() - t0):.2f}s')
         return inst
 
 
@@ -156,7 +159,7 @@ class ConfigManager(ConfigFactory):
 
     def exists(self, name: str):
         "Return ``True`` if data with key ``name`` exists."
-        pass
+        return self.stash.exists(name)
 
     def dump(self, name: str, inst):
         "Save the object instance to the stash."
@@ -226,6 +229,9 @@ class CachingConfigFactory(object):
             inst = self.delegate.load(name, *args, **kwargs)
             self.insts[name] = inst
             return inst
+
+    def exists(self, name: str):
+        return self.delegate.exists(name)
 
     def dump(self, name: str, inst):
         self.delegate.dump(name, inst)
