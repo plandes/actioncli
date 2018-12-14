@@ -1,6 +1,7 @@
 # Action and Mnemonic command line library
 
 [![Travis CI Build Status][travis-badge]][travis-link]
+[![PyPI][pypi-badge]][pypi-link]
 
 This library intends to make command line execution and configuration easy.
 The library supports (among other features) an mnemonic centric way to
@@ -128,3 +129,7 @@ SOFTWARE.
 
 [travis-link]: https://travis-ci.org/plandes/actioncli
 [travis-badge]: https://travis-ci.org/plandes/actioncli.svg?branch=master
+[![PyPI](https://img.shields.io/pypi/v/csvs-to-sqlite.svg)](https://pypi.python.org/pypi/csvs-to-sqlite)
+
+[pypi-link]: https://pypi.python.org/pypi/zensols.actioncli
+[pypi-badge]: https://img.shields.io/pypi/v/zensols.actioncli.svg
