@@ -56,6 +56,16 @@ class PersistedWork(object):
     def _info(self, msg, *args):
         logger.debug(self.varname + ': ' + msg, *args)
 
+    def clear_global(self):
+        """Clear only any cached global data.
+
+        """
+        vname = self.varname
+        logger.debug(f'global clearning {vname}')
+        if vname in globals():
+            logger.debug('removing global instance var: {}'.format(vname))
+            del globals()[vname]
+
     def clear(self):
         """Clear the data, and thus, force it to be created on the next fetch.  This is
         done by removing the attribute from ``owner``, deleting it from globals
@@ -69,9 +79,7 @@ class PersistedWork(object):
         if self.owner is not None and hasattr(self.owner, vname):
             logger.debug('removing instance var: {}'.format(vname))
             delattr(self.owner, vname)
-        if vname in globals():
-            logger.debug('removing global instance var: {}'.format(vname))
-            del globals()[vname]
+        self.clear_global()
 
     def _do_work(self, *argv, **kwargs):
         t0 = time()
