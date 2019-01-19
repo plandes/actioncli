@@ -516,9 +516,6 @@ class MultiThreadedPoolStash(DelegateStash):
     underlying stash.  This is a one shot creation: once the data is there, say
     from a previous run, the given iterable data set is not touched.
 
-    Note that you can create with an empty iterable (default parameter) and
-    override the ``__iter__`` method.
-
     *Iterable constraint*: It can be any object, but must have an ``id``
      propery.
 
@@ -538,9 +535,6 @@ class MultiThreadedPoolStash(DelegateStash):
         super(MultiThreadedPoolStash, self).__init__(delegate)
         self.workers = workers
         self.iterable = iterable
-
-    def __iter__(self):
-        return self.iterable
 
     @property
     def has_data(self):
@@ -565,10 +559,9 @@ class MultiThreadedPoolStash(DelegateStash):
         return res
 
     def _preempt(self):
-        iterable = self.__iter__()
         if not self.has_data:
             pool = self._create_thread_pool()
-            for _ in pool.map(self._map, iterable):
+            for _ in pool.map(self._map, self.iterable):
                 pass
             self._has_data = True
 
@@ -576,9 +569,9 @@ class MultiThreadedPoolStash(DelegateStash):
         self._preempt()
         return self.delegate.load(name)
 
-    def load_all(self):
+    def __iter__(self):
         pool = self._create_thread_pool()
-        return tuple(pool.map(self.delegate.load, self.keys()))
+        return iter(pool.map(self.delegate.load, self.keys()))
 
     def exists(self, name: str):
         self._preempt()

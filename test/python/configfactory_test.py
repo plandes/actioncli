@@ -156,7 +156,7 @@ class TestConfigFactory(unittest.TestCase):
             self.assertEqual(i * 2, wstash.load(i).value)
 
         wstash = WidgetStash(5, None)
-        alldat = wstash.load_all()
+        alldat = tuple(wstash)
         self.assertEqual(10, len(alldat))
         ids = set()
         for i, dat in enumerate(alldat):
