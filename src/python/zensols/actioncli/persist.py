@@ -1,15 +1,19 @@
 import logging
 import re
+import parse
 from copy import copy
 import pickle
 from time import time
 from pathlib import Path
+from multiprocessing.dummy import Pool as ThreadPool
+import threading
 import shelve as sh
 from abc import abstractmethod
 
 logger = logging.getLogger(__name__)
 
 
+# class level persistance
 class PersistedWork(object):
     """This class automatically caches work that's serialized to the disk.
 
@@ -230,7 +234,8 @@ class persisted(object):
 
         return wrapped
 
-
+
+# resource/sql
 class resource(object):
     """This annotation uses a template pattern to (de)allocate resources.  For
     example, you can declare class methods to create database connections and
@@ -274,7 +279,8 @@ class resource(object):
 
         return wrapped
 
-
+
+# collections
 class Stash(object):
     """Pure virtual clsss that represents CRUDing data.  The data is usually CRUDed
     to the file system but need not be.
@@ -303,6 +309,11 @@ class Stash(object):
         """
         pass
 
+    @abstractmethod
+    def keys(self):
+        """Return an iterable of keys in the collection."""
+        pass
+
     def __getitem__(self, key):
         exists = self.exists(key)
         item = self.load(key)
@@ -322,14 +333,40 @@ class Stash(object):
 
 class CloseableStash(Stash):
     def close(self):
-
         "Close all resources created by the stash."
         pass
+
+
+class DelegateStash(Stash):
+    def __init__(self, delegate):
+        if not isinstance(delegate, Stash):
+            raise ValueError(f'not a stash: {delegate}')
+        self.delegate = delegate
+
+    def load(self, name: str):
+        return self.delegate.load(name)
+
+    def exists(self, name: str):
+        return self.delegate.exists(name)
+
+    def dump(self, name: str, inst):
+        return self.delegate.dump(name)
+
+    def delete(self, name=None):
+        return self.delegate.delete(name)
+
+    def keys(self):
+        return self.delegate.keys()
+
+    def close(self):
+        return self.delegate.close()
 
 
 class DirectoryStash(Stash):
     """Creates a pickeled data file with a file name in a directory with a given
     pattern across all instances.
+
+    :see MultiThreadedPoolStash:
 
     """
     def __init__(self, create_path: Path, pattern='{name}.dat'):
@@ -342,12 +379,24 @@ class DirectoryStash(Stash):
         """
         self.pattern = pattern
         self.create_path = create_path
+        self.create_path_exists = False
+        self.lock = threading.Lock()
+
+    def _create_path_dir(self):
+        if not self.create_path_exists:
+            self.lock.acquire()
+            try:
+                if not self.create_path_exists:
+                    if not self.create_path.exists():
+                        self.create_path.mkdir(parents=True)
+            finally:
+                self.lock.release()
 
     def _get_instance_path(self, name):
         "Return a path to the pickled data with key ``name``."
         fname = self.pattern.format(**{'name': name})
-        if not self.create_path.exists():
-            self.create_path.mkdir(parents=True)
+        logger.debug(f'path {self.create_path}: {self.create_path.exists()}')
+        self._create_path_dir()
         return Path(self.create_path, fname)
 
     def load(self, name):
@@ -363,6 +412,19 @@ class DirectoryStash(Stash):
     def exists(self, name):
         path = self._get_instance_path(name)
         return path.exists()
+
+    def keys(self):
+        def path_to_key(path):
+            p = parse.parse(self.pattern, path.name).named
+            if 'name' in p:
+                return p['name']
+
+        if not self.create_path.is_dir():
+            keys = ()
+        else:
+            keys = filter(lambda x: x is not None,
+                          map(path_to_key, self.create_path.iterdir()))
+        return keys
 
     def dump(self, name, inst):
         logger.info(f'saving instance: {inst}')
@@ -419,6 +481,9 @@ class ShelveStash(CloseableStash):
     def exists(self, name):
         return name in self.shelve
 
+    def keys(self):
+        return self.shelve.keys()
+
     def delete(self, name=None):
         "Delete the shelve data file."
         logger.info('clearing shelve data')
@@ -439,6 +504,87 @@ class ShelveStash(CloseableStash):
                 self.is_open = False
 
 
+
+# utility classes
+class MultiThreadedPoolStash(DelegateStash):
+    """Generates stash data in a multithreaded pool from an iterable.  Once the
+    stash data has been created from the source iterable, it is persisted to
+    the underlying stash, and then works just like any other stash.
+
+    The first time the stash data is accessed in _any_ way (with the exception
+    of `has_data`) the entire iterable is exhausted an persisted to the
+    underlying stash.  This is a one shot creation: once the data is there, say
+    from a previous run, the given iterable data set is not touched.
+
+    Note that you can create with an empty iterable (default parameter) and
+    override the ``__iter__`` method.
+
+    *Iterable constraint*: It can be any object, but must have an ``id``
+     propery.
+
+    *Implementation note*: Only the ``DirectoryStash`` currently is
+     thread-safe, and it is only threads-safe across creation and not
+     reader/writers.
+
+    :param delegate: the underlying delegate stash that does handles the persistance
+    :type delegate: Stash
+    :param workers: the number of worker threads in the thread pool
+    :param iterable: the initial data set to be persisted; defaults to an empty
+                     tuple (see class notes)
+    :see: DirectoryStash
+
+    """
+    def __init__(self, delegate, workers, iterable=()):
+        super(MultiThreadedPoolStash, self).__init__(delegate)
+        self.workers = workers
+        self.iterable = iterable
+
+    def __iter__(self):
+        return self.iterable
+
+    @property
+    def has_data(self):
+        if not hasattr(self, '_has_data'):
+            try:
+                next(iter(self.delegate.keys()))
+                self._has_data = True
+            except StopIteration:
+                self._has_data = False
+        return self._has_data
+
+
+    def _map(self, data):
+        "Map ``data`` separately in each thread."
+        delegate = self.delegate
+        if self.exists(data.id):
+            res = delegate.load(data.id)
+        else:
+            res = delegate.dump(data.id, data)
+        return res
+
+    def _preempt(self):
+        iterable = self.__iter__()
+        if not self.has_data:
+            pool = ThreadPool(self.workers)
+            for _ in pool.map(self._map, iterable):
+                pass
+            self._has_data = True
+
+    def load(self, name: str):
+        self._preempt()
+        return self.delegate.load(name)
+
+    def exists(self, name: str):
+        self._preempt()
+        return self.delegate.exists(name)
+
+    def keys(self):
+        self._preempt()
+        return self.delegate.keys()
+
+
+
+# utility functions
 class shelve(object):
     """Object used with a ``with`` scope that creates the closes a shelve object.
 

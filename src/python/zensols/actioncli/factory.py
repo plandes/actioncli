@@ -161,6 +161,10 @@ class ConfigManager(ConfigFactory):
         "Return ``True`` if data with key ``name`` exists."
         return self.stash.exists(name)
 
+    def keys(self):
+        """Return an iterable of keys in the collection."""
+        return self.stash.keys()
+
     def dump(self, name: str, inst):
         "Save the object instance to the stash."
         self.stash.dump(name, inst)
