@@ -552,6 +552,8 @@ class MultiThreadedPoolStash(DelegateStash):
                 self._has_data = False
         return self._has_data
 
+    def _create_thread_pool(self):
+        return ThreadPool(self.workers)
 
     def _map(self, data):
         "Map ``data`` separately in each thread."
@@ -565,7 +567,7 @@ class MultiThreadedPoolStash(DelegateStash):
     def _preempt(self):
         iterable = self.__iter__()
         if not self.has_data:
-            pool = ThreadPool(self.workers)
+            pool = self._create_thread_pool()
             for _ in pool.map(self._map, iterable):
                 pass
             self._has_data = True
@@ -573,6 +575,10 @@ class MultiThreadedPoolStash(DelegateStash):
     def load(self, name: str):
         self._preempt()
         return self.delegate.load(name)
+
+    def load_all(self):
+        pool = self._create_thread_pool()
+        return tuple(pool.map(self.delegate.load, self.keys()))
 
     def exists(self, name: str):
         self._preempt()

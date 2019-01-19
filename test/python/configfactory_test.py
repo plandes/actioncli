@@ -154,3 +154,12 @@ class TestConfigFactory(unittest.TestCase):
         self.assertEqual(20, len(tuple(data)))
         for i in range(0, 10):
             self.assertEqual(i * 2, wstash.load(i).value)
+
+        wstash = WidgetStash(5, None)
+        alldat = wstash.load_all()
+        self.assertEqual(10, len(alldat))
+        ids = set()
+        for i, dat in enumerate(alldat):
+            ids.add(i)
+            self.assertEqual(dat.id * 2, dat.value)
+        self.assertEqual(set(range(0, 10)), ids)
