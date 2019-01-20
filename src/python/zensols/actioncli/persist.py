@@ -494,10 +494,12 @@ class ShelveStash(CloseableStash):
         "Delete the shelve data file."
         logger.info('clearing shelve data')
         self.close()
-        path = Path(self.create_path.parent, self.create_path.name + '.db')
-        logger.debug(f'clearing {path} if exists: {path.exists()}')
-        if path.exists():
-            path.unlink()
+        for path in Path(self.create_path.parent, self.create_path.name), \
+            Path(self.create_path.parent, self.create_path.name + '.db'):
+            logger.debug(f'clearing {path} if exists: {path.exists()}')
+            if path.exists():
+                path.unlink()
+                break
 
     def close(self):
         "Close the shelve object, which is needed for data consistency."

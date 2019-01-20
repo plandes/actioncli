@@ -1,4 +1,5 @@
 import logging
+from sys import platform
 from pathlib import Path
 import pickle
 from io import BytesIO
@@ -315,10 +316,17 @@ class TestPersistWork(unittest.TestCase):
         s.delete('tmp5')
         self.assertFalse(file_path.exists())
 
-    def test_shelve_stash(self):
+    def paths(self, name):
         path = Path('target')
-        file_path = path / 'tmp6.db'
-        create_path = path / 'tmp6'
+        file_path = path / f'{name}.db'
+        if platform == "linux" or platform == "linux2":
+            create_path = file_path
+        else:
+            create_path = path / name
+        return file_path, create_path
+
+    def test_shelve_stash(self):
+        file_path, create_path = self.paths('tmp6')
         s = ShelveStash(create_path)
         self.assertFalse(file_path.exists())
         obj = 'obj create of tmp6'
@@ -332,9 +340,7 @@ class TestPersistWork(unittest.TestCase):
         self.assertFalse(file_path.exists())
 
     def test_shelve_stash_with(self):
-        path = Path('target')
-        file_path = path / 'tmp7.db'
-        create_path = path / 'tmp7'
+        file_path, create_path = self.paths('tmp7')
         self.assertFalse(file_path.exists())
         with shelve(create_path) as s:
             self.assertFalse(s.exists('cool'))
