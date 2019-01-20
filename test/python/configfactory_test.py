@@ -77,7 +77,7 @@ class WidgetStash(MultiThreadedPoolStash):
     def __init__(self, workers, data):
         stash = DirectoryStash(
             create_path=self.PATH, pattern='{name}_wmulti.dat')
-        super(WidgetStash, self).__init__(stash, workers, data)
+        super(WidgetStash, self).__init__(stash, workers, data=data)
 
 
 class TestConfigFactory(unittest.TestCase):
@@ -134,7 +134,7 @@ class TestConfigFactory(unittest.TestCase):
         self.assertEqual(123, self.manager.load('one'))
         self.assertEqual(set(('one',)), set(self.manager.keys()))
 
-    def test_multi_tread(self):
+    def test_multi_thread(self):
         data = map(DataPoint, range(0, 10))
         wstash = WidgetStash(5, data)
         self.assertEqual(False, wstash.has_data)
@@ -159,7 +159,8 @@ class TestConfigFactory(unittest.TestCase):
         alldat = tuple(wstash)
         self.assertEqual(10, len(alldat))
         ids = set()
-        for i, dat in enumerate(alldat):
+        for i, (id, dat) in enumerate(alldat):
             ids.add(i)
+            self.assertEqual(int(id), dat.id)
             self.assertEqual(dat.id * 2, dat.value)
         self.assertEqual(set(range(0, 10)), ids)

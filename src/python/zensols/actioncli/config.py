@@ -27,13 +27,19 @@ class Configurable(object):
     BOOL_REGEXP = re.compile(r'^True|False')
     EVAL_REGEXP = re.compile(r'^eval:\s*(.+)$')
 
-    def __init__(self, config_file):
+    def __init__(self, config_file, default_expect):
         self.config_file = config_file
+        self.default_expect = default_expect
 
-    def get_option(self, name, expect=False):
+    def _narrow_expect(self, expect):
+        if expect == None:
+            expect = self.default_expect
+        return expect
+
+    def get_option(self, name, expect=None):
         raise ValueError('get_option is not implemented')
 
-    def get_options(self, name, expect=False):
+    def get_options(self, name, expect=None):
         raise ValueError('get_options is not implemented')
 
     @property
@@ -116,7 +122,7 @@ class Config(Configurable):
     """
 
     def __init__(self, config_file=None, default_section='default',
-                 robust=False, default_vars=None):
+                 robust=False, default_vars=None, default_expect=False):
         """Create with a configuration file path.
 
         Keyword arguments:
@@ -125,7 +131,7 @@ class Config(Configurable):
         :param bool robust: -- if `True`, then don't raise an error when the
                     configuration file is missing
         """
-        super(Config, self).__init__(config_file)
+        super(Config, self).__init__(config_file, default_expect)
         self.default_section = default_section
         self.robust = robust
         self.default_vars = default_vars
@@ -181,7 +187,7 @@ class Config(Configurable):
             opts[option] = conf.get(section, option, vars=vars)
         return opts
 
-    def get_option(self, name, section=None, vars=None, expect=False):
+    def get_option(self, name, section=None, vars=None, expect=None):
         """Return an option from ``section`` with ``name``.
 
         :param section: section in the ini file to fetch the value; defaults to
@@ -195,19 +201,19 @@ class Config(Configurable):
         if opts:
             return opts[name]
         else:
-            if expect:
+            if self._narrow_expect(expect):
                 raise ValueError('no option \'{}\' found in section {}'.
                                  format(name, section))
 
     def get_option_list(self, name, section=None, vars=None,
-                        expect=False, separator=','):
+                        expect=None, separator=','):
         """Just like ``get_option`` but parse as a list using ``split``.
 
         """
         val = self.get_option(name, section, vars, expect)
         return val.split(separator) if val else []
 
-    def get_option_boolean(self, name, section=None, vars=None, expect=False):
+    def get_option_boolean(self, name, section=None, vars=None, expect=None):
         """Just like ``get_option`` but parse as a boolean (any case `true`).
 
         """
@@ -215,7 +221,19 @@ class Config(Configurable):
         val = val.lower() if val else 'false'
         return val == 'true'
 
-    def get_option_path(self, name, section=None, vars=None, expect=False):
+    def get_option_int(self, name, section=None, vars=None, expect=None):
+        """Just like ``get_option`` but parse as an integer."""
+        val = self.get_option(name, section, vars, expect)
+        if val:
+            return int(val)
+
+    def get_option_float(self, name, section=None, vars=None, expect=None):
+        """Just like ``get_option`` but parse as a float."""
+        val = self.get_option(name, section, vars, expect)
+        if val:
+            return float(val)
+
+    def get_option_path(self, name, section=None, vars=None, expect=None):
         """Just like ``get_option`` but return a ``pathlib.Path`` object of
         the string.
 

@@ -1,5 +1,6 @@
 import logging
 import re
+import itertools as it
 import parse
 from copy import copy
 import pickle
@@ -283,7 +284,8 @@ class resource(object):
 # collections
 class Stash(object):
     """Pure virtual clsss that represents CRUDing data.  The data is usually CRUDed
-    to the file system but need not be.
+    to the file system but need not be.  Instance can be used as iterables or
+    dicsts.  If the former, each item is returned as a key/value tuple.
 
     """
     @abstractmethod
@@ -329,6 +331,9 @@ class Stash(object):
 
     def __contains__(self, key):
         return self.exists(key)
+
+    def __iter__(self):
+        return map(lambda x: (x, self.load(x),), self.keys())
 
 
 class CloseableStash(Stash):
@@ -389,6 +394,7 @@ class DirectoryStash(Stash):
                 if not self.create_path_exists:
                     if not self.create_path.exists():
                         self.create_path.mkdir(parents=True)
+                        self.create_path_exists = True
             finally:
                 self.lock.release()
 
@@ -508,15 +514,16 @@ class ShelveStash(CloseableStash):
 # utility classes
 class MultiThreadedPoolStash(DelegateStash):
     """Generates stash data in a multithreaded pool from an iterable.  Once the
-    stash data has been created from the source iterable, it is persisted to
-    the underlying stash, and then works just like any other stash.
+    stash data has been created from the source iterable (``data`` parameter),
+    it is persisted to the underlying stash, and then works just like any other
+    stash.
 
     The first time the stash data is accessed in _any_ way (with the exception
-    of `has_data`) the entire iterable is exhausted an persisted to the
+    of `has_data`) the entire data iterable is exhausted an persisted to the
     underlying stash.  This is a one shot creation: once the data is there, say
-    from a previous run, the given iterable data set is not touched.
+    from a previous run, the given data iterable data set is not touched.
 
-    *Iterable constraint*: It can be any object, but must have an ``id``
+    *Data iterable constraint*: It can be any object, but must have an ``id``
      propery.
 
     *Implementation note*: Only the ``DirectoryStash`` currently is
@@ -526,15 +533,16 @@ class MultiThreadedPoolStash(DelegateStash):
     :param delegate: the underlying delegate stash that does handles the persistance
     :type delegate: Stash
     :param workers: the number of worker threads in the thread pool
-    :param iterable: the initial data set to be persisted; defaults to an empty
-                     tuple (see class notes)
+    :param data: the initial data set to be persisted; defaults to an empty
+                 tuple (see class notes)
     :see: DirectoryStash
 
     """
-    def __init__(self, delegate, workers, iterable=()):
+    def __init__(self, delegate, workers, clobber=False, data=()):
         super(MultiThreadedPoolStash, self).__init__(delegate)
         self.workers = workers
-        self.iterable = iterable
+        self.clobber = clobber
+        self.data = data
 
     @property
     def has_data(self):
@@ -546,39 +554,74 @@ class MultiThreadedPoolStash(DelegateStash):
                 self._has_data = False
         return self._has_data
 
-    def _create_thread_pool(self):
-        return ThreadPool(self.workers)
+    def _create_thread_pool(self, workers=None):
+        workers = self.workers if workers is None else workers
+        return ThreadPool(workers)
 
     def _map(self, data):
         "Map ``data`` separately in each thread."
         delegate = self.delegate
-        if self.exists(data.id):
-            res = delegate.load(data.id)
-        else:
-            res = delegate.dump(data.id, data)
-        return res
+        logger.debug(f'exist: {data.id}: {self.exists(data.id)}')
+        if self.clobber or not self.exists(data.id):
+            logger.debug(f'mapping: {data.id}')
+            delegate.dump(data.id, data)
 
-    def _preempt(self):
-        if not self.has_data:
+    def _preempt(self, force):
+        has_data = self.has_data
+        logger.debug(f'preempt has data: {has_data}')
+        if force or not has_data:
             pool = self._create_thread_pool()
-            for _ in pool.map(self._map, self.iterable):
-                pass
-            self._has_data = True
+            try:
+                logger.info(f'mapping data using {self.workers} workers')
+                for _ in pool.map(self._map, self.data):
+                    pass
+                self._has_data = True
+            finally:
+                pool.close()
+
+    def force_iterate(self):
+        """Force the data iteration/creation for all missing data."""
+        self._preempt(True)
 
     def load(self, name: str):
-        self._preempt()
+        self._preempt(False)
         return self.delegate.load(name)
 
-    def __iter__(self):
-        pool = self._create_thread_pool()
-        return iter(pool.map(self.delegate.load, self.keys()))
+    def load_all(self, workers=None, limit=None, n_expected=None):
+        """Load all instances witih multiple threads.
+
+        :param workers: number of workers to use to load instances, which
+                        defaults to what was given in the class initializer
+        :param limit: return a maximum, which defaults to no limit
+
+        :param n_expected: rerun the iteration on the data if we didn't find
+                           enough data, or more specifically, number of found
+                           data points is less than ``n_expected``; defaults to
+                           all
+
+        """
+        if not self.has_data:
+            self._preempt(True)
+            # we did the best we could (avoid repeat later in this method)
+            n_expected = 0
+        keys = tuple(self.delegate.keys())
+        if n_expected is not None and len(keys) < n_expected:
+            self._preempt(True)
+            keys = self.delegate.keys()
+        keys = it.islice(limit, keys) if limit is not None else keys
+        pool = self._create_thread_pool(workers)
+        logger.debug(f'workers={workers}, keys: {keys}')
+        try:
+            return iter(pool.map(self.delegate.load, keys))
+        finally:
+            pool.close()
 
     def exists(self, name: str):
-        self._preempt()
+        self._preempt(False)
         return self.delegate.exists(name)
 
     def keys(self):
-        self._preempt()
+        self._preempt(False)
         return self.delegate.keys()
 
 

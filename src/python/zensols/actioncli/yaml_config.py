@@ -19,8 +19,9 @@ class YamlConfig(Configurable):
 
     CLASS_VER = 0
 
-    def __init__(self, config_file=None, default_vars=None, delimiter='$', ):
-        super(YamlConfig, self).__init__(config_file)
+    def __init__(self, config_file=None, default_vars=None, delimiter='$',
+                 default_expect=False):
+        super(YamlConfig, self).__init__(config_file, default_expect)
         self.default_vars = default_vars if default_vars else {}
         self.delimiter = delimiter
 
@@ -106,13 +107,13 @@ class """ + class_name + """(Template):
                 logger.debug('not found: {}'.format(name))
         return find(self.config, '', name)
 
-    def _get_option(self, name, expect=False):
+    def _get_option(self, name, expect=None):
         node = self._option(name)
         if self._is_primitive(node):
             return node
         elif self.default_vars is not None and name in self.default_vars:
             return self.default_vars[name]
-        elif expect:
+        elif self._narrow_expect(expect):
             raise ValueError('no such option: {}'.format(name))
 
     @property
@@ -124,17 +125,17 @@ class """ + class_name + """(Template):
                 self._options[k] = self._get_option(k, expect=True)
         return self._options
 
-    def get_option(self, name, expect=False):
+    def get_option(self, name, expect=None):
         if self.default_vars and name in self.default_vars:
             return self.default_vars[name]
         else:
             ops = self.options
             if name in ops:
                 return ops[name]
-            elif expect:
+            elif self._narrow_expect(expect):
                 raise ValueError('no such option: {}'.format(name))
 
-    def get_options(self, name, expect=False):
+    def get_options(self, name, expect=None):
         if self.default_vars and name in self.default_vars:
             return self.default_vars[name]
         else:
@@ -143,5 +144,5 @@ class """ + class_name + """(Template):
                 return node
             elif name in self.default_vars:
                 return self.default_vars[name]
-            elif expect:
+            elif self._narrow_expect(expect):
                 raise ValueError('no such option: {}'.format(name))
