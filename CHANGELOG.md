@@ -8,7 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
-## [1.0.10] - 2019-02-03
+## [1.0.11] - 2019-02-03
+### Added
+- Multithreading Stash
+
+
+## [1.0.10] - 2019-11-26
 ### Added
 - Cache framework.
 
@@ -97,7 +102,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.9...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.11...HEAD
+[1.0.11]: https://github.com/plandes/actioncli/compare/v1.0.10...v1.0.11
+[1.0.10]: https://github.com/plandes/actioncli/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/plandes/actioncli/compare/v1.0.8...v1.0.9
 [1.0.8]: https://github.com/plandes/actioncli/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/plandes/actioncli/compare/v1.0.6...v1.0.7
