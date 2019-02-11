@@ -22,8 +22,8 @@ testconfig:
 
 .PHONY:	testpersist
 testpersist:
-#	make PY_SRC_TEST_PKGS=persist_test.TestPersistWork.test_stash test
-	make PY_SRC_TEST_PKGS=persist_test test
+	make PY_SRC_TEST_PKGS=persist_test.TestStash test
+#	make PY_SRC_TEST_PKGS=persist_test test
 
 .PHONY:	testtask
 testtask:

@@ -335,6 +335,9 @@ class Stash(object):
     def __iter__(self):
         return map(lambda x: (x, self.load(x),), self.keys())
 
+    def __len__(self):
+        return len(tuple(self.keys()))
+
 
 class CloseableStash(Stash):
     def close(self):
@@ -343,6 +346,8 @@ class CloseableStash(Stash):
 
 
 class DelegateStash(Stash):
+    """Delegate pattern.
+    """
     def __init__(self, delegate):
         if not isinstance(delegate, Stash):
             raise ValueError(f'not a stash: {delegate}')
@@ -355,7 +360,7 @@ class DelegateStash(Stash):
         return self.delegate.exists(name)
 
     def dump(self, name: str, inst):
-        return self.delegate.dump(name)
+        return self.delegate.dump(name, inst)
 
     def delete(self, name=None):
         return self.delegate.delete(name)
@@ -365,6 +370,118 @@ class DelegateStash(Stash):
 
     def close(self):
         return self.delegate.close()
+
+
+class PreemptiveStash(DelegateStash):
+    """Provide support for preemptively creating data in a stash.
+
+    """
+    @property
+    def has_data(self):
+        """Return whether or not the stash has any data available or not."""
+        if not hasattr(self, '_has_data'):
+            try:
+                next(iter(self.delegate.keys()))
+                self._has_data = True
+            except StopIteration:
+                self._has_data = False
+        return self._has_data
+
+    def _reset_has_data(self):
+        """Reset the state of whether the stash has data or not."""
+        if hasattr(self, '_has_data'):
+            delattr(self, '_has_data')
+
+    def _set_has_data(self, has_data=True):
+        """Set the state of whether the stash has data or not."""
+        self._has_data = has_data
+
+
+class FactoryStash(PreemptiveStash):
+    """A stash that defers to creation of new items to another ``factory`` stash.
+
+    """
+    def __init__(self, delegate, factory):
+        """Initialize.
+
+        :param delegate: the stash used for persistence
+        :type delegate: Stash
+        :param factory: the stash used to create using ``load`` and ``keys``
+        :type factory: Stash
+        """
+        super(FactoryStash, self).__init__(delegate)
+        self.factory = factory
+
+    def load(self, name: str):
+        if self.exists(name):
+            item = super(FactoryStash, self).load(name)
+        else:
+            self._reset_has_data()
+            item = self.factory.load(name)
+        return item
+
+    def keys(self):
+        if self.has_data:
+            ks = super(FactoryStash, self).keys()
+        else:
+            ks = self.factory.keys()
+        return ks
+
+
+class DictionaryStash(DelegateStash):
+    """
+    """
+    def __init__(self, data: dict=None):
+        if data is None:
+            self.data = {}
+        else:
+            self.data = data
+
+    @abstractmethod
+    def load(self, name: str):
+        return self.data[name]
+
+    @abstractmethod
+    def exists(self, name: str):
+        return name in self.data
+
+    def dump(self, name: str, inst):
+        self.data[name] = inst
+
+    def delete(self, name=None):
+        del self.data[name]
+
+    def keys(self):
+        return self.data.keys()
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+
+class CacheStash(DelegateStash):
+    """Provide a dictionary based caching based stash.
+    """
+    def __init__(self, delegate):
+        super(CacheStash, self).__init__(delegate)
+        self.cache = {}
+
+    def load(self, name: str):
+        if name in self.cache:
+            return self.cache[name]
+        else:
+            obj = self.delegate.load(name)
+            self.cache[name] = obj
+            return obj
+
+    def exists(self, name: str):
+        if name in self.cache:
+            return True
+        return self.delegate.exists(name)
+
+    def delete(self, name=None):
+        if name in self.cache:
+            del self.cache[name]
+        return self.delegate.delete(name)
 
 
 class DirectoryStash(Stash):
@@ -514,7 +631,7 @@ class ShelveStash(CloseableStash):
 
 
 # utility classes
-class MultiThreadedPoolStash(DelegateStash):
+class MultiThreadedPoolStash(PreemptiveStash):
     """Generates stash data in a multithreaded pool from an iterable.  Once the
     stash data has been created from the source iterable (``data`` parameter),
     it is persisted to the underlying stash, and then works just like any other
@@ -546,16 +663,6 @@ class MultiThreadedPoolStash(DelegateStash):
         self.clobber = clobber
         self.data = data
 
-    @property
-    def has_data(self):
-        if not hasattr(self, '_has_data'):
-            try:
-                next(iter(self.delegate.keys()))
-                self._has_data = True
-            except StopIteration:
-                self._has_data = False
-        return self._has_data
-
     def _create_thread_pool(self, workers=None):
         workers = self.workers if workers is None else workers
         return ThreadPool(workers)
@@ -577,7 +684,7 @@ class MultiThreadedPoolStash(DelegateStash):
                 logger.info(f'mapping data using {self.workers} workers')
                 for _ in pool.map(self._map, self.data):
                     pass
-                self._has_data = True
+                self._set_has_data(True)
             finally:
                 pool.close()
 

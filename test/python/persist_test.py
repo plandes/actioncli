@@ -7,6 +7,7 @@ import unittest
 from zensols.actioncli import (
     PersistedWork, persisted, PersistableContainer,
     DirectoryStash, ShelveStash, shelve,
+    FactoryStash, CacheStash, Stash, DictionaryStash
 )
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -350,3 +351,40 @@ class TestPersistWork(unittest.TestCase):
             self.assertTrue([1, 2, 123], s.load('cool'))
         with shelve(create_path) as s:
             self.assertTrue([1, 2, 123], s.load('cool'))
+
+
+class IncStash(Stash):
+    def __init__(self):
+        self.c = 0
+
+    def load(self, name: str):
+        self.c += 1
+        return f'{name}-{self.c}'
+
+    def keys(self):
+        return ()
+
+
+class TestStash(unittest.TestCase):
+    def test_dict(self):
+        ds = DictionaryStash()
+        self.assertEqual(0, len(ds.keys()))
+        self.assertFalse(ds.exists('a'))
+        ds.dump('a', 1)
+        self.assertTrue(ds.exists('a'))
+        self.assertEqual(1, ds.load('a'))
+        self.assertEqual(1, ds['a'])
+        ds.delete('a')
+        self.assertEqual(0, len(ds.keys()))
+        self.assertFalse(ds.exists('a'))
+
+    def test_caching(self):
+        ins = IncStash()
+        ds = DictionaryStash()
+        st = FactoryStash(ds, ins)
+        self.assertEqual('first-1', st['first'])
+        self.assertEqual('second-2', st['second'])
+        self.assertEqual('first-1', st['first'])
+        self.assertEqual('second-2', st['second'])
+        self.assertEqual(2, len(st))
+        self.assertEqual(set('first second'.split()), st.keys())
