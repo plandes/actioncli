@@ -1,5 +1,8 @@
 import logging
 import inspect
+import importlib
+import re
+from functools import reduce
 from time import time
 from zensols.actioncli import (
     Configurable,
@@ -7,6 +10,76 @@ from zensols.actioncli import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ClassImporter(object):
+    """Utility class that reloads a module and instantiates a class from a string
+    class name.  This is handy for prototyping code in a Python REPL.
+
+    """
+    CLASS_REGEX = re.compile(r'^(.+)\.(.+?)$')
+
+    def __init__(self, class_name: str, reload: bool = True):
+        """Initialize with the class name.
+
+        :param class_name: the fully qualifed name of the class (including the
+                           module portion of the class name)
+        :param reload: if ``True`` then reload the module before returning the
+        class
+        """
+        self.class_name = class_name
+        self.reload = reload
+
+    def parse_module_class(self):
+        """Parse the module and class name part of the fully qualifed class name.
+
+        """
+        cname = self.class_name
+        match = re.match(self.CLASS_REGEX, cname)
+        if not match:
+            raise ValueError(f'not a fully qualified class name: {cname}')
+        return match.groups()
+
+    def get_module_class(self):
+        """Return the module and class as a tuple of the given class in the
+        initializer.
+
+        :param reload: if ``True`` then reload the module before returning the
+        class
+
+        """
+        pkg, cname = self.parse_module_class()
+        logger.debug(f'pkg: {pkg}, class: {cname}')
+        pkg = pkg.split('.')
+        mod = reduce(lambda m, n: getattr(m, n), pkg[1:], __import__(pkg[0]))
+        logger.debug(f'mod: {mod}')
+        if self.reload:
+            importlib.reload(mod)
+        cls = getattr(mod, cname)
+        logger.debug(f'class: {cls}')
+        return mod, cls
+
+    def instance(self, *args, **kwargs):
+        """Create an instance of the specified class in the initializer.
+
+        :param args: the arguments given to the initializer of the new class
+        :param kwargs: the keyword arguments given to the initializer of the
+                     new class
+
+        """
+        mod, cls = self.get_module_class()
+        inst = cls(*args, **kwargs)
+        logger.debug(f'inst: {inst}')
+        return inst
+
+    def set_log_level(self, level=logging.INFO):
+        """Convenciene method to set the log level of the module given in the
+        initializer of this class.
+
+        :param level: and instance of ``logging.<level>``
+        """
+        mod, cls = self.parse_module_class()
+        logging.getLogger(mod).setLevel(level)
 
 
 class ConfigFactory(object):

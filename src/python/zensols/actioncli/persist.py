@@ -311,10 +311,23 @@ class Stash(object):
         """
         pass
 
+    def clear(self):
+        """Delete all data from the from the stash.
+
+        *Important*: Exercise caution with this method, of course.
+
+        """
+        for k in self.keys():
+            self.delete(k)
+
     @abstractmethod
     def keys(self):
         """Return an iterable of keys in the collection."""
         pass
+
+    def items(self):
+        """Return an iterable of all stash items"""
+        return map(lambda x: self.__getitem__(x), self.keys())
 
     def __getitem__(self, key):
         exists = self.exists(key)
@@ -333,7 +346,7 @@ class Stash(object):
         return self.exists(key)
 
     def __iter__(self):
-        return map(lambda x: (x, self.load(x),), self.keys())
+        return map(lambda x: (x, self.__getitem__(x),), self.keys())
 
     def __len__(self):
         return len(tuple(self.keys()))
@@ -429,7 +442,9 @@ class FactoryStash(PreemptiveStash):
 
 
 class DictionaryStash(DelegateStash):
-    """
+    """Use a dictionary as a backing store to the stash.  If one is not provided in
+    the initializer a new ``dict`` is created.
+
     """
     def __init__(self, data: dict=None):
         if data is None:
@@ -667,13 +682,13 @@ class MultiThreadedPoolStash(PreemptiveStash):
         workers = self.workers if workers is None else workers
         return ThreadPool(workers)
 
-    def _map(self, data):
-        "Map ``data`` separately in each thread."
+    def _map(self, data_item):
+        "Map ``data_item`` separately in each thread."
         delegate = self.delegate
-        logger.debug(f'exist: {data.id}: {self.exists(data.id)}')
-        if self.clobber or not self.exists(data.id):
-            logger.debug(f'mapping: {data.id}')
-            delegate.dump(data.id, data)
+        logger.debug(f'mapping: {data_item}')
+        if self.clobber or not self.exists(data_item.id):
+            logger.debug(f'exist: {data_item.id}: {self.exists(data_item.id)}')
+            delegate.dump(data_item.id, data_item)
 
     def _preempt(self, force):
         has_data = self.has_data
