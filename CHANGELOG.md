@@ -8,9 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.0.12 - 2019-03-24]
+### Added 
+- Class importer.
+- Better persist semantics.
+
+
 ## [1.0.11] - 2019-02-03
 ### Added
-- Multithreading Stash
+- Multithreading Stash.
 
 
 ## [1.0.10] - 2019-11-26
@@ -102,7 +108,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.11...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.12...HEAD
+[1.0.12]: https://github.com/plandes/actioncli/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/plandes/actioncli/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/plandes/actioncli/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/plandes/actioncli/compare/v1.0.8...v1.0.9
