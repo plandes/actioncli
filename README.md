@@ -129,7 +129,5 @@ SOFTWARE.
 
 [travis-link]: https://travis-ci.org/plandes/actioncli
 [travis-badge]: https://travis-ci.org/plandes/actioncli.svg?branch=master
-[![PyPI](https://img.shields.io/pypi/v/csvs-to-sqlite.svg)](https://pypi.python.org/pypi/csvs-to-sqlite)
-
 [pypi-link]: https://pypi.python.org/pypi/zensols.actioncli
 [pypi-badge]: https://img.shields.io/pypi/v/zensols.actioncli.svg
