@@ -244,14 +244,20 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
     configuration on to the rest of the CLI action processing in the super
     class.
 
-    :param opt_config: the option configuration (see project documentation)
-    :param config_env_name: the name of the environment variable that holds the
-    resource like name (i.e. ~/.<program name>rc); this will be used as the
-    configuration file if it is given and found; otherwise a ``ValueError`` is
-    rasied if not found
     """
     def __init__(self, opt_config, config_env_name=None, no_os_environ=False,
                  *args, **kwargs):
+        """Initialize.
+
+        :param opt_config: the option configuration (see project documentation)
+        :param config_env_name: the name of the environment variable that holds
+            the resource like name (i.e. ~/.<program name>rc); this will be used as
+            the configuration file if it is given and found; otherwise a
+            ``ValueError`` is rasied if not found
+        :param no_os_environ: if ``True`` do not add environment variables to
+            the configuration environment
+
+        """
         super(OneConfPerActionOptionsCliEnv, self).__init__(
             opt_config, *args, **kwargs)
         if config_env_name is None:

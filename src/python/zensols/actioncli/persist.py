@@ -452,11 +452,9 @@ class DictionaryStash(DelegateStash):
         else:
             self.data = data
 
-    @abstractmethod
     def load(self, name: str):
         return self.data[name]
 
-    @abstractmethod
     def exists(self, name: str):
         return name in self.data
 
