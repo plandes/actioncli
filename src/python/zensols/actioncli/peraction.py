@@ -299,5 +299,8 @@ class OneConfPerActionOptionsCliEnv(OneConfPerActionOptionsCli):
                 if os.path.isfile(self.default_config_file):
                     conf_file = self.default_config_file
                 elif 'expect' in conf and conf['expect']:
+                    if conf_file is None:
+                        raise IOError('no configuration file defined in: %s or %s' %
+                                      (conf['name'], self.default_config_file))
                     raise IOError('no such configuration file: %s' % conf_file)
         return conf_file
