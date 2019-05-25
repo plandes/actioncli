@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+## Changed
+- Documentation.
+- Better error message on missing config file.
 
 
 ## [1.0.12 - 2019-03-24]
