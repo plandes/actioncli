@@ -34,7 +34,7 @@ class YamlConfig(Configurable):
     def _parse(self):
         with open(self.config_file) as f:
             content = f.read()
-        struct = yaml.load(content)
+        struct = yaml.load(content, yaml.FullLoader)
         context = {}
         context.update(self.default_vars)
 
@@ -79,7 +79,7 @@ class """ + class_name + """(Template):
         while prev != content:
             prev = content
             content = cls(content).substitute(context)
-        return yaml.load(content)
+        return yaml.load(content, yaml.FullLoader)
 
     @property
     def config(self):
