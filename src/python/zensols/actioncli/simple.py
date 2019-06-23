@@ -132,7 +132,7 @@ class SimpleActionCli(object):
     def _create_parser(self, usage):
         return OptionParser(usage=usage, version='%prog ' + str(self.version))
 
-    def invoke(self, args=sys.argv[1:]):
+    def create_executor(self, args=sys.argv[1:]):
         usage = 'usage: %prog <list|...> [options]'
         parser = self._create_parser(usage)
         self.parser = parser
@@ -155,6 +155,7 @@ class SimpleActionCli(object):
         if action == 'list':
             short = hasattr(options, 'short') and options.short
             self.print_actions(short)
+            return None, None
         else:
             if action not in self.invokes:
                 self._parser_error("no such action: '%s'" % action)
@@ -178,6 +179,14 @@ class SimpleActionCli(object):
             try:
                 exec_obj = self.executors[exec_name](params)
                 self._init_executor(exec_obj, config, args[1:])
+                return meth, exec_obj
+            except ActionCliError as err:
+                self._parser_error(format(err))
+
+    def invoke(self, args=sys.argv[1:]):
+        meth, exec_obj = self.create_executor(args)
+        if exec_obj is not None:
+            try:
                 logging.debug('invoking: %s.%s' % (exec_obj, meth))
                 getattr(exec_obj, meth)()
             except ActionCliError as err:

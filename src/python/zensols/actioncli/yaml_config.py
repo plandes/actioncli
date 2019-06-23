@@ -78,6 +78,8 @@ class """ + class_name + """(Template):
         cls = self._make_class()
         while prev != content:
             prev = content
+            # TODO: raise here for missing keys embedded in the file rather
+            # than KeyError
             content = cls(content).substitute(context)
         return yaml.load(content, yaml.FullLoader)
 
