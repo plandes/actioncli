@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Feature to allow CLI clients to create executors.
+
 
 ## [1.0.13 - 2019-05-27]
 ## Changed
 - Documentation.
 - Better error message on missing config file.
 - Rid YAML deprecation warnings and upgrade.
+
 
 ## [1.0.12 - 2019-03-24]
 ### Added 
