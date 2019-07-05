@@ -7,7 +7,6 @@ import pickle
 from time import time
 from pathlib import Path
 from multiprocessing.dummy import Pool as ThreadPool
-import threading
 import shelve as sh
 from abc import abstractmethod
 
@@ -325,6 +324,12 @@ class Stash(object):
         """Return an iterable of keys in the collection."""
         pass
 
+    def key_groups(self, n):
+        "Return an iterable of groups of keys, each of size at least ``n``."
+        klst = tuple(self.keys())
+        for i in range(0, len(klst), n):
+            yield klst[i:i+n]
+
     def items(self):
         """Return an iterable of all stash items"""
         return map(lambda x: self.__getitem__(x), self.keys())
@@ -501,8 +506,6 @@ class DirectoryStash(Stash):
     """Creates a pickeled data file with a file name in a directory with a given
     pattern across all instances.
 
-    :see MultiThreadedPoolStash:
-
     """
     def __init__(self, create_path: Path, pattern='{name}.dat'):
         """Create a stash.
@@ -514,19 +517,9 @@ class DirectoryStash(Stash):
         """
         self.pattern = pattern
         self.create_path = create_path
-        self.create_path_exists = False
-        self.lock = threading.Lock()
 
     def _create_path_dir(self):
-        if not self.create_path_exists:
-            self.lock.acquire()
-            try:
-                if not self.create_path_exists:
-                    if not self.create_path.exists():
-                        self.create_path.mkdir(parents=True)
-                        self.create_path_exists = True
-            finally:
-                self.lock.release()
+        self.create_path.mkdir(parents=True, exist_ok=True)
 
     def _get_instance_path(self, name):
         "Return a path to the pickled data with key ``name``."
@@ -640,111 +633,6 @@ class ShelveStash(CloseableStash):
                 self._shelve.clear()
             except Exception:
                 self.is_open = False
-
-
-
-# utility classes
-class MultiThreadedPoolStash(PreemptiveStash):
-    """Generates stash data in a multithreaded pool from an iterable.  Once the
-    stash data has been created from the source iterable (``data`` parameter),
-    it is persisted to the underlying stash, and then works just like any other
-    stash.
-
-    The first time the stash data is accessed in _any_ way (with the exception
-    of `has_data`) the entire data iterable is exhausted an persisted to the
-    underlying stash.  This is a one shot creation: once the data is there, say
-    from a previous run, the given data iterable data set is not touched.
-
-    *Data iterable constraint*: It can be any object, but must have an ``id``
-     propery.
-
-    *Implementation note*: Only the ``DirectoryStash`` currently is
-     thread-safe, and it is only threads-safe across creation and not
-     reader/writers.
-
-    :param delegate: the underlying delegate stash that does handles the persistance
-    :type delegate: Stash
-    :param workers: the number of worker threads in the thread pool
-    :param data: the initial data set to be persisted; defaults to an empty
-                 tuple (see class notes)
-    :see: DirectoryStash
-
-    """
-    def __init__(self, delegate, workers, clobber=False, data=()):
-        super(MultiThreadedPoolStash, self).__init__(delegate)
-        self.workers = workers
-        self.clobber = clobber
-        self.data = data
-
-    def _create_thread_pool(self, workers=None):
-        workers = self.workers if workers is None else workers
-        return ThreadPool(workers)
-
-    def _map(self, data_item):
-        "Map ``data_item`` separately in each thread."
-        delegate = self.delegate
-        logger.debug(f'mapping: {data_item}')
-        if self.clobber or not self.exists(data_item.id):
-            logger.debug(f'exist: {data_item.id}: {self.exists(data_item.id)}')
-            delegate.dump(data_item.id, data_item)
-
-    def _preempt(self, force):
-        has_data = self.has_data
-        logger.debug(f'preempt has data: {has_data}')
-        if force or not has_data:
-            pool = self._create_thread_pool()
-            try:
-                logger.info(f'mapping data using {self.workers} workers')
-                for _ in pool.map(self._map, self.data):
-                    pass
-                self._set_has_data(True)
-            finally:
-                pool.close()
-
-    def force_iterate(self):
-        """Force the data iteration/creation for all missing data."""
-        self._preempt(True)
-
-    def load(self, name: str):
-        self._preempt(False)
-        return self.delegate.load(name)
-
-    def load_all(self, workers=None, limit=None, n_expected=None):
-        """Load all instances witih multiple threads.
-
-        :param workers: number of workers to use to load instances, which
-                        defaults to what was given in the class initializer
-        :param limit: return a maximum, which defaults to no limit
-
-        :param n_expected: rerun the iteration on the data if we didn't find
-                           enough data, or more specifically, number of found
-                           data points is less than ``n_expected``; defaults to
-                           all
-
-        """
-        if not self.has_data:
-            self._preempt(True)
-            # we did the best we could (avoid repeat later in this method)
-            n_expected = 0
-        keys = tuple(self.delegate.keys())
-        if n_expected is not None and len(keys) < n_expected:
-            self._preempt(True)
-            keys = self.delegate.keys()
-        keys = it.islice(limit, keys) if limit is not None else keys
-        pool = self._create_thread_pool(workers)
-        logger.debug(f'workers={workers}, keys: {keys}')
-        try:
-            return iter(pool.map(self.delegate.load, keys))
-        finally:
-            pool.close()
-
-    def exists(self, name: str):
-        self._preempt(False)
-        return self.delegate.exists(name)
-
-    def keys(self):
-        self._preempt(False)
-        return self.delegate.keys()
 
 
 

@@ -365,6 +365,17 @@ class IncStash(Stash):
         return ()
 
 
+class RangeStash(Stash):
+    def __init__(self, n):
+        self.n = n
+
+    def load(self, name: str):
+        return name
+
+    def keys(self):
+        return range(self.n)
+
+
 class TestStash(unittest.TestCase):
     def test_dict(self):
         ds = DictionaryStash()
@@ -388,3 +399,12 @@ class TestStash(unittest.TestCase):
         self.assertEqual('second-2', st['second'])
         self.assertEqual(2, len(st))
         self.assertEqual(set('first second'.split()), st.keys())
+
+    def test_key_group(self):
+        stash = RangeStash(5)
+        self.assertEqual(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4)), tuple(stash))
+        self.assertEqual(((0, 1, 2), (3, 4)), tuple(stash.key_groups(3)))
+        self.assertEqual(((0, 1), (2, 3), (4,)), tuple(stash.key_groups(2)))
+        self.assertEqual(((0, 1, 2, 3), (4,)), tuple(stash.key_groups(4)))
+        self.assertEqual(((0, 1, 2, 3, 4,),), tuple(stash.key_groups(5)))
+        self.assertEqual(((0, 1, 2, 3, 4,),), tuple(stash.key_groups(6)))
