@@ -37,3 +37,7 @@ testtpopulate:
 testfactory:
 #	make PY_SRC_TEST_PKGS=configfactory_test test
 	make PY_SRC_TEST_PKGS=configfactory_test.TestConfigFactory.test_multi_thread test
+
+.PHONY:	testmp
+testmp:
+	make PY_SRC_TEST_PKGS=multi_proc_test.TestMultiProc test

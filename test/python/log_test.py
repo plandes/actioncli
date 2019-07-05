@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-
 import unittest
 import logging
 from io import StringIO
 from zensols.actioncli import LogConfigurer
+
 
 class TestLogConf(unittest.TestCase):
     def test_log(self):

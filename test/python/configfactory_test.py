@@ -7,7 +7,6 @@ from zensols.actioncli import (
     ConfigFactory,
     ConfigManager,
     DirectoryStash,
-    MultiThreadedPoolStash,
 )
 
 logger = logging.getLogger('zneosls.configfactory.test')
@@ -71,15 +70,6 @@ class DataPoint(object):
         return f'({self.id}, {self.value})'
 
 
-class WidgetStash(MultiThreadedPoolStash):
-    PATH = Path('target/wmmanager')
-
-    def __init__(self, workers, data):
-        stash = DirectoryStash(
-            create_path=self.PATH, pattern='{name}_wmulti.dat')
-        super(WidgetStash, self).__init__(stash, workers, data=data)
-
-
 class TestConfigFactory(unittest.TestCase):
     def setUp(self):
         self.config = Config('test-resources/config-factory.conf')
@@ -133,34 +123,3 @@ class TestConfigFactory(unittest.TestCase):
         self.manager.dump('one', 123)
         self.assertEqual(123, self.manager.load('one'))
         self.assertEqual(set(('one',)), set(self.manager.keys()))
-
-    def test_multi_thread(self):
-        data = map(DataPoint, range(0, 10))
-        wstash = WidgetStash(5, data)
-        self.assertEqual(False, wstash.has_data)
-        self.assertEqual(False, wstash.has_data)
-        self.assertEqual(10, len(tuple(wstash.keys())))
-        self.assertEqual(True, wstash.has_data)
-        self.assertEqual(10, DataPoint.INSTANCES)
-        self.assertEqual(10, len(tuple(wstash.keys())))
-        self.assertEqual(10, DataPoint.INSTANCES)
-        for i in range(0, 10):
-            self.assertEqual(i * 2, wstash.load(i).value)
-
-        data = map(DataPoint, range(0, 20))
-        wstash = WidgetStash(5, data)
-        self.assertEqual(True, wstash.has_data)
-        self.assertEqual(10, len(tuple(wstash.keys())))
-        self.assertEqual(20, len(tuple(data)))
-        for i in range(0, 10):
-            self.assertEqual(i * 2, wstash.load(i).value)
-
-        wstash = WidgetStash(5, None)
-        alldat = tuple(wstash)
-        self.assertEqual(10, len(alldat))
-        ids = set()
-        for i, (id, dat) in enumerate(alldat):
-            ids.add(i)
-            self.assertEqual(int(id), dat.id)
-            self.assertEqual(dat.id * 2, dat.value)
-        self.assertEqual(set(range(0, 10)), ids)
