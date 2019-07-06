@@ -16,23 +16,27 @@ class StashMapReducer(object):
         n_items = len(self.stash)
         return math.ceil(n_items / self.n_workers)
 
-    def map(self, id: str, val):
+    def _map(self, id: str, val):
         return (id, val)
 
-    def reduce(self, vals):
+    def _reduce(self, vals):
         return vals
 
-    def _worker(self, id_sets):
-        return tuple(map(lambda id: self.map(id, self.stash[id]), id_sets))
+    def _reduce_final(self, reduced_vals):
+        return reduced_vals
 
-    def _map(self):
+    def _map_ids(self, id_sets):
+        return tuple(map(lambda id: self._map(id, self.stash[id]), id_sets))
+
+    def map(self):
         id_sets = self.stash.key_groups(self.key_group_size)
         pool = Pool(self.n_workers)
-        return pool.map(self._worker, id_sets)
+        return pool.map(self._map_ids, id_sets)
 
     def __call__(self):
-        mapval = self._map()
-        return map(self.reduce, mapval)
+        mapval = self.map()
+        reduced = map(self._reduce, mapval)
+        return self._reduce_final(reduced)
 
 
 class FunctionStashMapReducer(StashMapReducer):
@@ -40,10 +44,10 @@ class FunctionStashMapReducer(StashMapReducer):
         super(FunctionStashMapReducer, self).__init__(stash, n_workers)
         self.func = func
 
-    def map(self, id: str, val):
+    def _map(self, id: str, val):
         return self.func(id, val)
 
     @staticmethod
     def map_func(*args, **kwargs):
         mr = FunctionStashMapReducer(*args, **kwargs)
-        return mr._map()
+        return mr.map()

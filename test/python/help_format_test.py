@@ -96,6 +96,9 @@ Actions:
   -o, --outputdir <string>  .              the directory to output the website
 """
 
+    def setUp(self):
+        self.maxDiff = 9999999
+
     def test_help_formatting(self):
         if True:
             cli = ConfAppCommandLine()

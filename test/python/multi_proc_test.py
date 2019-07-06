@@ -21,15 +21,15 @@ class RangeStash(Stash):
 
 
 class IncMapReducer(StashMapReducer):
-    def map(self, id: str, val):
+    def _map(self, id: str, val):
         return val + 1
 
 
 class IncSumMapReducer(StashMapReducer):
-    def map(self, id: str, val):
+    def _map(self, id: str, val):
         return val + 1
 
-    def reduce(self, vals):
+    def _reduce(self, vals):
         return sum(vals)
 
 

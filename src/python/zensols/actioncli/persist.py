@@ -390,6 +390,23 @@ class DelegateStash(Stash):
         return self.delegate.close()
 
 
+class KeyLimitStash(DelegateStash):
+    """A stash that limits the number of generated keys useful for debugging.
+
+    For most stashes, this also limits the iteration output since that is based
+    on key mapping.
+
+    """
+    def __init__(self, delegate: Stash, n_limit=10):
+        super(KeyLimitStash, self).__init__(delegate)
+        self.n_limit = n_limit
+
+    def keys(self):
+        ks = super(KeyLimitStash, self).keys()
+        return it.islice(ks, self.n_limit)
+
+
+
 class PreemptiveStash(DelegateStash):
     """Provide support for preemptively creating data in a stash.
 
