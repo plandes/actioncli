@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [1.0.15] - 2019-07-06
 ### Added
 - Feature to allow CLI clients to create executors.
+- Key limit stash for debugging.
+- Stash based multi-process library.
+### Removed
+- Superfluous multi-threaded stash.
+
+
+## [1.0.14] - 2019-06-23
+### Added
+- CLI created executors.
 
 
 ## [1.0.13 - 2019-05-27]
@@ -118,7 +129,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.13...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.15...HEAD
+[1.0.15]: https://github.com/plandes/actioncli/compare/v1.0.14...v1.0.15
+[1.0.14]: https://github.com/plandes/actioncli/compare/v1.0.13...v1.0.14
 [1.0.13]: https://github.com/plandes/actioncli/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/plandes/actioncli/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/plandes/actioncli/compare/v1.0.10...v1.0.11
