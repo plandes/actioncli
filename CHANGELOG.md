@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+### Added
+- Moved `test.py` from [zensols.dltools] to this repository to.
+
+
 ## [1.0.15] - 2019-07-06
 ### Added
 - Feature to allow CLI clients to create executors.
@@ -150,3 +154,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [0.0.4]: https://github.com/plandes/actioncli/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/plandes/actioncli/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/plandes/actioncli/compare/v0.0.1...v0.0.2
+
+[zensols.dltools]: https://github.com/plandes/dltools
