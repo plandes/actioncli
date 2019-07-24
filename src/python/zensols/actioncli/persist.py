@@ -6,9 +6,8 @@ from copy import copy
 import pickle
 from time import time
 from pathlib import Path
-from multiprocessing.dummy import Pool as ThreadPool
 import shelve as sh
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 logger = logging.getLogger(__name__)
 
@@ -281,7 +280,7 @@ class resource(object):
 
 
 # collections
-class Stash(object):
+class Stash(ABC):
     """Pure virtual clsss that represents CRUDing data.  The data is usually CRUDed
     to the file system but need not be.  Instance can be used as iterables or
     dicsts.  If the former, each item is returned as a key/value tuple.
