@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Moved `test.py` from [zensols.dltools] to this repository to.
 
+### Changed
+- Fixed abstract class usage.  Now the interpreter will complain if you don't
+  fully implement an abstract class.
+
 
 ## [1.0.15] - 2019-07-06
 ### Added
