@@ -357,36 +357,50 @@ class Stash(ABC):
 
 
 class CloseableStash(Stash):
+    """Any stash that has a resource that needs to be closed.
+
+    """
+    @abstractmethod
     def close(self):
         "Close all resources created by the stash."
         pass
 
 
-class DelegateStash(Stash):
-    """Delegate pattern.
+class DelegateStash(CloseableStash):
+    """Delegate pattern.  It can also be used as a no-op if no delegate is given.
+
     """
-    def __init__(self, delegate):
-        if not isinstance(delegate, Stash):
+    def __init__(self, delegate=None):
+        if delegate is not None and not isinstance(delegate, Stash):
             raise ValueError(f'not a stash: {delegate}')
         self.delegate = delegate
 
     def load(self, name: str):
-        return self.delegate.load(name)
+        if self.delegate is not None:
+            return self.delegate.load(name)
 
     def exists(self, name: str):
-        return self.delegate.exists(name)
+        if self.delegate is not None:
+            return self.delegate.exists(name)
+        else:
+            return False
 
     def dump(self, name: str, inst):
-        return self.delegate.dump(name, inst)
+        if self.delegate is not None:
+            return self.delegate.dump(name, inst)
 
     def delete(self, name=None):
-        return self.delegate.delete(name)
+        if self.delegate is not None:
+            return self.delegate.delete(name)
 
     def keys(self):
-        return self.delegate.keys()
+        if self.delegate is not None:
+            return self.delegate.keys()
+        return ()
 
     def close(self):
-        return self.delegate.close()
+        if self.delegate is not None:
+            return self.delegate.close()
 
 
 class KeyLimitStash(DelegateStash):

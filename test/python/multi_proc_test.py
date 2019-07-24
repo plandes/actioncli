@@ -1,7 +1,7 @@
 import logging
 import unittest
 from zensols.actioncli import (
-    Stash,
+    DelegateStash,
     StashMapReducer,
     FunctionStashMapReducer,
 )
@@ -9,8 +9,9 @@ from zensols.actioncli import (
 logger = logging.getLogger(__name__)
 
 
-class RangeStash(Stash):
+class RangeStash(DelegateStash):
     def __init__(self, n):
+        super(RangeStash, self).__init__()
         self.n = n
 
     def load(self, name: str):

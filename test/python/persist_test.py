@@ -5,9 +5,15 @@ import pickle
 from io import BytesIO
 import unittest
 from zensols.actioncli import (
-    PersistedWork, persisted, PersistableContainer,
-    DirectoryStash, ShelveStash, shelve,
-    FactoryStash, CacheStash, Stash, DictionaryStash
+    persisted,
+    PersistedWork,
+    PersistableContainer,
+    DirectoryStash,
+    ShelveStash,
+    shelve,
+    FactoryStash,
+    DelegateStash,
+    DictionaryStash
 )
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -353,20 +359,19 @@ class TestPersistWork(unittest.TestCase):
             self.assertTrue([1, 2, 123], s.load('cool'))
 
 
-class IncStash(Stash):
+class IncStash(DelegateStash):
     def __init__(self):
+        super(IncStash, self).__init__()
         self.c = 0
 
     def load(self, name: str):
         self.c += 1
         return f'{name}-{self.c}'
 
-    def keys(self):
-        return ()
 
-
-class RangeStash(Stash):
+class RangeStash(DelegateStash):
     def __init__(self, n):
+        super(RangeStash, self).__init__()
         self.n = n
 
     def load(self, name: str):
