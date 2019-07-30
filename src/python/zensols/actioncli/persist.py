@@ -369,6 +369,10 @@ class CloseableStash(Stash):
 class DelegateStash(CloseableStash):
     """Delegate pattern.  It can also be used as a no-op if no delegate is given.
 
+    A minimum functioning implementation needs the ``load`` and ``keys``
+    methods overriden.  Inheriting and implementing a ``Stash`` such as this is
+    usually used as the ``factory`` in a ``FactoryStash``.
+
     """
     def __init__(self, delegate=None):
         if delegate is not None and not isinstance(delegate, Stash):

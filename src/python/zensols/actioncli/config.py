@@ -32,7 +32,7 @@ class Configurable(object):
         self.default_expect = default_expect
 
     def _narrow_expect(self, expect):
-        if expect == None:
+        if expect is None:
             expect = self.default_expect
         return expect
 

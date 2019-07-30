@@ -174,7 +174,11 @@ class ConfigFactory(object):
         :param kwargs: given to the ``__init__`` method
         """
         logger.debug(f'args: {args}, kwargs: {kwargs}')
-        return cls(*args, **kwargs)
+        try:
+            return cls(*args, **kwargs)
+        except Exception as e:
+            logger.error(f'couldnt not create class {cls}({args})({kwargs}): {e}')
+            raise e
 
     def instance(self, name=None, *args, **kwargs):
         """Create a new instance using key ``name``.
@@ -205,6 +209,48 @@ class ConfigFactory(object):
         logger.info(f'created {name} instance of {cls.__name__} ' +
                     f'in {(time() - t0):.2f}s')
         return inst
+
+
+class ConfigChildrenFactory(ConfigFactory):
+    """Like ``ConfigFactory``, but create children defined with the configuration
+    key ``CREATE_CHILDREN_KEY``.  For each of these defined in the comma
+    separated property child property is set and then passed on to the
+    initializer of the object created.
+
+    In addition, any parameters passed to the initializer of the instance
+    method are passed on the comma separate list ``<name>_pass_param`` where
+    ``name`` is the name of the next object to instantiate per the
+    configuraiton.
+
+    """
+    CREATE_CHILDREN_KEY = 'create_children'
+
+    def _process_pass_params(self, name, kwargs):
+        passkw = {}
+        kname = f'{name}_pass_param'
+        if kname in kwargs:
+            for k in kwargs[kname].split(','):
+                logger.debug(f'passing parameter {k}')
+                passkw[k] = kwargs[k]
+            del kwargs[kname]
+        return passkw
+
+    def _instance_children(self, kwargs):
+        if self.CREATE_CHILDREN_KEY in kwargs:
+            for k in kwargs[self.CREATE_CHILDREN_KEY].split(','):
+                passkw = self._process_pass_params(k, kwargs)
+                logger.debug(f'create {k}: {kwargs}')
+                if k in kwargs:
+                    kwargs[k] = self.instance(kwargs[k], **passkw)
+                    for pk in passkw.keys():
+                        del kwargs[pk]
+            del kwargs[self.CREATE_CHILDREN_KEY]
+
+    def _instance(self, cls, *args, **kwargs):
+        logger.debug(f'stash create: {cls}({args})({kwargs})')
+        self._instance_children(kwargs)
+        return super(ConfigChildrenFactory, self)._instance(
+            cls, *args, **kwargs)
 
 
 class ConfigManager(ConfigFactory):

@@ -40,4 +40,4 @@ testfactory:
 
 .PHONY:	testmp
 testmp:
-	make PY_SRC_TEST_PKGS=multi_proc_test.TestMultiProc test
+	make PY_SRC_TEST_PKGS=persist_factory_test.TestStashFactory test
