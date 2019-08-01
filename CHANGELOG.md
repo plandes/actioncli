@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## Added
+- Robust configuration handling: derived configuration from resource files.
+- Settable base configuration for `zensols.actioncli.Config`.
+
+
 ## [1.0.16] - 2019-07-25
 ### Added
 - Moved `test.py` from [zensols.dltools] to this repository to.

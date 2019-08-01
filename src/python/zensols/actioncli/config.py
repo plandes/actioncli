@@ -1,5 +1,7 @@
 import os
+import sys
 import logging
+from copy import deepcopy
 import re
 import configparser
 from pathlib import Path
@@ -122,23 +124,32 @@ class Config(Configurable):
     """
 
     def __init__(self, config_file=None, default_section='default',
-                 robust=False, default_vars=None, default_expect=False):
+                 robust=False, default_vars=None, default_expect=False,
+                 create_defaults=None):
         """Create with a configuration file path.
 
         Keyword arguments:
         :param str config_file: the configuration file path to read from
         :param str default_section: default section (defaults to `default`)
-        :param bool robust: -- if `True`, then don't raise an error when the
-                    configuration file is missing
+        :param bool robust: if `True`, then don't raise an error when the
+                            configuration file is missing
+        :param default_expect: if ``True``, raise exceptions when keys and/or
+                              sections are not found in the configuration
+        :param create_defaults: used to initialize the configuration parser,
+                                and useful for when substitution values are
+                                baked in to the configuration file
         """
+
         super(Config, self).__init__(config_file, default_expect)
         self.default_section = default_section
         self.robust = robust
         self.default_vars = default_vars
+        self.create_defaults = create_defaults
+        self.nascent = deepcopy(self.__dict__)
 
     def _create_config_parser(self):
         "Factory method to create the ConfigParser."
-        return configparser.ConfigParser()
+        return configparser.ConfigParser(defaults=self.create_defaults)
 
     @property
     def parser(self):
@@ -253,6 +264,37 @@ class Config(Configurable):
         if secs:
             return set(secs)
 
+    def set_option(self, name, value, section=None):
+        logger.debug(f'setting option {name}: {value} in section {section}')
+        if not self.parser.has_section(section):
+            self.parser.add_section(section)
+        self.parser.set(section, name, value)
+
+    def derive_from_resource(self, path, copy_sections=()):
+        """Derive a new configuration from the resource file name ``path``.
+
+        :param path: a resource file (i.e. ``resources/app.conf``)
+        :pram copy_sections: a list of sections to copy from this to the
+                             derived configuration
+
+        """
+        kwargs = deepcopy(self.nascent)
+        kwargs['config_file'] = path
+        conf = self.__class__(**kwargs)
+        for sec in copy_sections:
+            for k, v in self.get_options(sec).items():
+                conf.set_option(k, v, sec)
+        return conf
+
+    def pprint(self, writer=sys.stdout):
+        """Print a human readable list of sections and options.
+
+        """
+        for sec in self.sections:
+            writer.write(f'{sec}:\n')
+            for k, v in self.get_options(sec).items():
+                writer.write(f'  {k}: {v}\n')
+
     def __str__(self):
         return str('file: {}, section: {}'.
                    format(self.config_file, self.sections))
@@ -269,4 +311,5 @@ class ExtendedInterpolationConfig(Config):
 
     def _create_config_parser(self):
         inter = configparser.ExtendedInterpolation()
-        return configparser.ConfigParser(interpolation=inter)
+        return configparser.ConfigParser(
+            defaults=self.create_defaults, interpolation=inter)
