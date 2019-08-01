@@ -13,7 +13,8 @@ from zensols.actioncli import (
     shelve,
     FactoryStash,
     DelegateStash,
-    DictionaryStash
+    DictionaryStash,
+    CacheStash,
 )
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -413,3 +414,15 @@ class TestStash(unittest.TestCase):
         self.assertEqual(((0, 1, 2, 3), (4,)), tuple(stash.key_groups(4)))
         self.assertEqual(((0, 1, 2, 3, 4,),), tuple(stash.key_groups(5)))
         self.assertEqual(((0, 1, 2, 3, 4,),), tuple(stash.key_groups(6)))
+
+    def test_cache_stash(self):
+        stash = CacheStash(RangeStash(5))
+        self.assertEqual(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4)), tuple(stash))
+        self.assertEqual({0: 0, 1: 1, 2: 2, 3: 3, 4: 4}, stash.cache_stash.data)
+        stash.delete(3)
+        self.assertEqual({0: 0, 1: 1, 2: 2, 4: 4}, stash.cache_stash.data)
+        # range stash doesn't implement delete
+        self.assertEqual(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4)), tuple(stash))
+        self.assertEqual(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4)),
+                         tuple(sorted(stash.cache_stash, key=lambda x: x[0])))
+

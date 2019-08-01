@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.0.17] - 2019-07-31
 ## Added
 - Robust configuration handling: derived configuration from resource files.
 - Settable base configuration for `zensols.actioncli.Config`.
+- `CacheStash` allows any backing stash.
 
 
 ## [1.0.16] - 2019-07-25
@@ -143,7 +145,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.16...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.17...HEAD
+[1.0.17]: https://github.com/plandes/actioncli/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/plandes/actioncli/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/plandes/actioncli/compare/v1.0.14...v1.0.15
 [1.0.14]: https://github.com/plandes/actioncli/compare/v1.0.13...v1.0.14

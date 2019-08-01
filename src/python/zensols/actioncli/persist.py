@@ -512,27 +512,29 @@ class DictionaryStash(DelegateStash):
 
 class CacheStash(DelegateStash):
     """Provide a dictionary based caching based stash.
+
     """
-    def __init__(self, delegate):
+    def __init__(self, delegate, cache_stash=None):
         super(CacheStash, self).__init__(delegate)
-        self.cache = {}
+        if cache_stash is None:
+            self.cache_stash = DictionaryStash()
+        else:
+            self.cache_stash = cache_stash
 
     def load(self, name: str):
-        if name in self.cache:
-            return self.cache[name]
+        if self.cache_stash.exists(name):
+            return self.cache_stash.load(name)
         else:
             obj = self.delegate.load(name)
-            self.cache[name] = obj
+            self.cache_stash.dump(name, obj)
             return obj
 
     def exists(self, name: str):
-        if name in self.cache:
-            return True
-        return self.delegate.exists(name)
+        return self.cache_stash.exists(name) or self.delegate.exists(name)
 
     def delete(self, name=None):
-        if name in self.cache:
-            del self.cache[name]
+        if self.cache_stash.exists(name):
+            self.cache_stash.delete(name)
         return self.delegate.delete(name)
 
 
