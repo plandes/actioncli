@@ -30,7 +30,7 @@ class PrintActionsOptionParser(OptionParser):
     @action_options.setter
     def action_options(self, opts):
         self._action_options = opts
-        self.usage = 'usage: %prog <list|{}> [options]'.\
+        self.usage = '%prog <list|{}> [options]'.\
                      format('|'.join(self.action_names))
 
     def print_help(self, file=sys.stdout):
@@ -199,6 +199,7 @@ class OneConfPerActionOptionsCli(PerActionOptionsCli):
         parser.action_options = self.action_options
         parser.invokes = self.invokes
         self._log_config()
+        logger.debug('finished config parser')
 
     def _create_config(self, conf_file, default_vars):
         return self.config_type(

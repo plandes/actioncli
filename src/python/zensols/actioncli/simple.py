@@ -133,13 +133,15 @@ class SimpleActionCli(object):
         return OptionParser(usage=usage, version='%prog ' + str(self.version))
 
     def create_executor(self, args=sys.argv[1:]):
-        usage = 'usage: %prog <list|...> [options]'
+        usage = '%prog <list|...> [options]'
         parser = self._create_parser(usage)
         self.parser = parser
         self.config_parser()
+        logger.debug(f'configured parser: {parser}')
         if len(args) > 0 and args[0] in self.invokes:
             logger.info('configuring parser on action: %s' % args[0])
             self._config_parser_for_action(args, parser)
+        logger.debug(f'parsing arguments: {args}')
         (options, args) = parser.parse_args(args)
         logger.debug('options: <%s>, args: <%s>' % (options, args))
         if len(args) > 0:
@@ -150,6 +152,7 @@ class SimpleActionCli(object):
             else:
                 logger.debug('using default action: %s' % self.default_action)
                 action = self.default_action
+        logger.debug('adding logging')
         if self.add_logging:
             self._config_logging(options.whine)
         if action == 'list':
