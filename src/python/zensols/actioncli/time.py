@@ -30,11 +30,14 @@ class time(object):
         """Create the time object.
 
         If a logger is not given, it is taken from the calling frame's global
-        variable named ``logger``.  If this global doesn't exit it uses it's
-        own logger defined in this module.
+        variable named ``logger``.  If this global doesn't exit it logs to
+        standard out.
+
+        You can force standard out instead of a logger by using 
 
         :param msg: the message log when exiting the closure
-        :param logger: the logger to use for logging
+        :param logger: the logger to use for logging or the string ``stdout``
+                       for printing to standard
         :param level: the level at which the message is logged
 
         """
@@ -61,4 +64,8 @@ class time(object):
             msg = msg.format(**locals)
         except Exception as e:
             time_logger.error(e)
-        self.logger.log(self.level, f'{msg} finished in {elapse:.1f}s')
+        msgstr = f'{msg} finished in {elapse:.1f}s'
+        if self.logger is not None:
+            self.logger.log(self.level, msgstr)
+        else:
+            print(msgstr)
