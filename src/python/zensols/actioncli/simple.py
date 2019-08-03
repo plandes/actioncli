@@ -75,9 +75,13 @@ class SimpleActionCli(object):
             fmt = '%(message)s'
         else:
             fmt = '%(levelname)s:%(asctime)-15s %(name)s: %(message)s'
-        logging.basicConfig(format=fmt, level=levelno)
-        root.setLevel(levelno)
-        logger.setLevel(levelno)
+        if self.pkg is not None:
+            logging.basicConfig(format=fmt, level=logging.WARNING)
+            logging.getLogger(self.pkg.project_name).setLevel(level=levelno)
+        else:
+            logging.basicConfig(format=fmt, level=levelno)
+            root.setLevel(levelno)
+            logger.setLevel(levelno)
 
     def print_actions(self, short):
         if short:
