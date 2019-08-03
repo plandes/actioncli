@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## Added
+- More Pythonic `dict` semantics for `Stash` classes.  Now they have the same
+  API as a Python `dict`.
+
+## Changed
+- Logging switches affect *only* the applications module for defined CLI
+  packages as apposed to the entire Python logging system.  This cuts down a
+  lot on the verbosity of the logging.  If no package is defined, the old
+  default behavior is used.
+  
 
 ## [1.0.17] - 2019-07-31
 ## Added
