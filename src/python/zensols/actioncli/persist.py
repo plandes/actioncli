@@ -320,7 +320,9 @@ class Stash(ABC):
 
     @abstractmethod
     def keys(self):
-        """Return an iterable of keys in the collection."""
+        """Return an iterable of keys in the collection.
+
+        """
         pass
 
     def key_groups(self, n):
@@ -329,9 +331,15 @@ class Stash(ABC):
         for i in range(0, len(klst), n):
             yield klst[i:i+n]
 
+    def values(self):
+        """Return the values in the hash.
+
+        """
+        return map(lambda k: self.__getitem__(k), self.keys())
+
     def items(self):
         """Return an iterable of all stash items"""
-        return map(lambda x: self.__getitem__(x), self.keys())
+        return map(lambda x: (k, self.__getitem__(k)), self.keys())
 
     def __getitem__(self, key):
         exists = self.exists(key)
@@ -670,11 +678,21 @@ class ShelveStash(CloseableStash):
             except Exception:
                 self.is_open = False
 
+    def clear(self):
+        if self.create_path.exists():
+            self.create_path.unlink()
 
 
 # utility functions
 class shelve(object):
     """Object used with a ``with`` scope that creates the closes a shelve object.
+
+    For example, the following opens a file ``path``, sets a temporary variable
+    ``stash``, prints all the data from the shelve, and then closes it.
+
+    with shelve(path) as stash:
+        for id, val in stash, 30:
+            print(f'{id}: {val}')
 
     """
     def __init__(self, *args, **kwargs):
