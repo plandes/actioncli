@@ -148,6 +148,8 @@ class SimpleActionCli(object):
         logger.debug(f'parsing arguments: {args}')
         (options, args) = parser.parse_args(args)
         logger.debug('options: <%s>, args: <%s>' % (options, args))
+        self.parsed_options = options
+        self.parsed_args = args
         if len(args) > 0:
             action = args[0]
         else:
