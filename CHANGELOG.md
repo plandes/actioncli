@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Robust configuration handling: derived configuration from resource files.
 - Settable base configuration for `zensols.actioncli.Config`.
 - `CacheStash` allows any backing stash.
+- Now the CLI parser keeps parsed options and arguments to downstream pipeline
+  processing.
 
 
 ## [1.0.16] - 2019-07-25
