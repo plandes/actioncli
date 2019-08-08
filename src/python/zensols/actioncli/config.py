@@ -143,9 +143,15 @@ class Config(Configurable):
         super(Config, self).__init__(config_file, default_expect)
         self.default_section = default_section
         self.robust = robust
-        self.default_vars = default_vars
-        self.create_defaults = create_defaults
+        self.default_vars = self._munge_default_vars(default_vars)
+        self.create_defaults = self._munge_create_defaults(create_defaults)
         self.nascent = deepcopy(self.__dict__)
+
+    def _munge_default_vars(self, vars):
+        return vars
+
+    def _munge_create_defaults(self, vars):
+        return vars
 
     def _create_config_parser(self):
         "Factory method to create the ConfigParser."

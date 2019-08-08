@@ -63,8 +63,6 @@ class SimpleActionCli(object):
             config.pkg = self.pkg
 
     def _config_logging(self, level):
-        root = logging.getLogger()
-        map(root.removeHandler, root.handlers[:])
         if level == 0:
             levelno = logging.WARNING
         elif level == 1:
@@ -75,13 +73,17 @@ class SimpleActionCli(object):
             fmt = '%(message)s'
         else:
             fmt = '%(levelname)s:%(asctime)-15s %(name)s: %(message)s'
+        self._config_log_level(fmt, levelno)
+
+    def _config_log_level(self, fmt, levelno):
         if self.pkg is not None:
             logging.basicConfig(format=fmt, level=logging.WARNING)
             logging.getLogger(self.pkg.project_name).setLevel(level=levelno)
         else:
+            root = logging.getLogger()
+            map(root.removeHandler, root.handlers[:])
             logging.basicConfig(format=fmt, level=levelno)
             root.setLevel(levelno)
-            logger.setLevel(levelno)
 
     def print_actions(self, short):
         if short:
