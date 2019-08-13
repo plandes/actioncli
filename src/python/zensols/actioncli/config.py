@@ -319,3 +319,25 @@ class ExtendedInterpolationConfig(Config):
         inter = configparser.ExtendedInterpolation()
         return configparser.ConfigParser(
             defaults=self.create_defaults, interpolation=inter)
+
+
+class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
+    def __init__(self, *args, **kwargs):
+        if 'default_expect' not in kwargs:
+            kwargs['default_expect'] = True
+        super(ExtendedInterpolationEnvConfig, self).__init__(*args, **kwargs)
+
+    def _munge_default_vars(self, vars):
+        if vars is not None:
+            for n in 'LANG USER user'.split():
+                if n in vars:
+                    del vars[n]
+        return vars
+
+    def _create_config_parser(self):
+        parser = super(ExtendedInterpolationEnvConfig, self)._create_config_parser()
+        sec = 'env'
+        parser.add_section(sec)
+        for k, v in os.environ.items():
+            parser.set(sec, k, v)
+        return parser
