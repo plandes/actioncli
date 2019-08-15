@@ -26,7 +26,7 @@ class time(object):
     loggers.
 
     """
-    def __init__(self, msg, logger=None, level=logging.INFO):
+    def __init__(self, msg, level=logging.INFO, logger=None):
         """Create the time object.
 
         If a logger is not given, it is taken from the calling frame's global

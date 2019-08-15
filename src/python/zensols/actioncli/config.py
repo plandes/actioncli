@@ -250,13 +250,25 @@ class Config(Configurable):
         if val:
             return float(val)
 
-    def get_option_path(self, name, section=None, vars=None, expect=None):
+    def get_option_path(self, name, section=None, vars=None,
+                        expect=None, create=None):
         """Just like ``get_option`` but return a ``pathlib.Path`` object of
         the string.
 
+        :param create: if ``parent`` then create the path and all parents not
+                       including the file; if ``dir``, then create all parents;
+                       otherwise do not create anything
+
         """
         val = self.get_option(name, section, vars, expect)
-        return Path(val)
+        path = None
+        if val is not None:
+            path = Path(val)
+            if create == 'dir':
+                path.mkdir(parents=True, exist_ok=True)
+            if create == 'file':
+                path.parent.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def options(self):
@@ -276,7 +288,12 @@ class Config(Configurable):
             self.parser.add_section(section)
         self.parser.set(section, name, value)
 
-    def derive_from_resource(self, path, copy_sections=()):
+    def copy_sections(self, to_populate: Configurable, sections: list):
+        for sec in sections:
+            for k, v in self.get_options(sec).items():
+                to_populate.set_option(k, v, sec)
+
+    def derive_from_resource(self, path: str, copy_sections=()) -> Configurable:
         """Derive a new configuration from the resource file name ``path``.
 
         :param path: a resource file (i.e. ``resources/app.conf``)
@@ -287,9 +304,7 @@ class Config(Configurable):
         kwargs = deepcopy(self.nascent)
         kwargs['config_file'] = path
         conf = self.__class__(**kwargs)
-        for sec in copy_sections:
-            for k, v in self.get_options(sec).items():
-                conf.set_option(k, v, sec)
+        self.copy_sections(conf, copy_sections)
         return conf
 
     def pprint(self, writer=sys.stdout):
@@ -314,7 +329,6 @@ class ExtendedInterpolationConfig(Config):
     ``configparser.ExtendedInterpolation``.
 
     """
-
     def _create_config_parser(self):
         inter = configparser.ExtendedInterpolation()
         return configparser.ConfigParser(
@@ -322,14 +336,20 @@ class ExtendedInterpolationConfig(Config):
 
 
 class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
-    def __init__(self, *args, **kwargs):
+    """A ``Config`` implementation that creates a section called ``env`` with
+    environment variables passed.
+
+    """
+
+    def __init__(self, *args, remove_vars=None, **kwargs):
         if 'default_expect' not in kwargs:
             kwargs['default_expect'] = True
+        self.remove_vars = remove_vars
         super(ExtendedInterpolationEnvConfig, self).__init__(*args, **kwargs)
 
     def _munge_default_vars(self, vars):
-        if vars is not None:
-            for n in 'LANG USER user'.split():
+        if vars is not None and self.remove_vars is not None:
+            for n in self.remove_vars:
                 if n in vars:
                     del vars[n]
         return vars
@@ -339,5 +359,6 @@ class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
         sec = 'env'
         parser.add_section(sec)
         for k, v in os.environ.items():
+            logger.debug(f'adding env section {sec}: {k} -> {v}')
             parser.set(sec, k, v)
         return parser
