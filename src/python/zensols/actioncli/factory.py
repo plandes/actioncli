@@ -68,7 +68,12 @@ class ClassImporter(object):
 
         """
         mod, cls = self.get_module_class()
-        inst = cls(*args, **kwargs)
+        try:
+            inst = cls(*args, **kwargs)
+        except Exception as e:
+            msg = f'could not instantiate {cls}({args}, {kwargs})'
+            logger.error(msg, e)
+            raise e
         logger.debug(f'inst: {inst}')
         return inst
 
