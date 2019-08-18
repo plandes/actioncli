@@ -338,8 +338,8 @@ class Stash(ABC):
         return map(lambda k: self.__getitem__(k), self.keys())
 
     def items(self):
-        """Return an iterable of all stash items"""
-        return map(lambda x: (k, self.__getitem__(k)), self.keys())
+        """Return an iterable of all stash items."""
+        return map(lambda k: (k, self.__getitem__(k)), self.keys())
 
     def __getitem__(self, key):
         exists = self.exists(key)
