@@ -281,19 +281,34 @@ class resource(object):
 
 # collections
 class Stash(ABC):
-    """Pure virtual clsss that represents CRUDing data.  The data is usually CRUDed
-    to the file system but need not be.  Instance can be used as iterables or
-    dicsts.  If the former, each item is returned as a key/value tuple.
+    """Pure virtual clsss that represents CRUDing data that uses ``dict``
+    semantics.  The data is usually CRUDed to the file system but need not be.
+    Instance can be used as iterables or dicsts.  If the former, each item is
+    returned as a key/value tuple.
 
     """
     @abstractmethod
     def load(self, name: str):
-        "Load a data value from the pickled data with key ``name``."
+        """Load a data value from the pickled data with key ``name``.
+
+        """
         pass
+
+    def get(self, name: str, default=None):
+        """Load an object or a default if key ``name`` doesn't exist.
+
+        """
+        ret = self.load(name)
+        if ret is None:
+            return default
+        else:
+            return ret
 
     @abstractmethod
     def exists(self, name: str):
-        "Return ``True`` if data with key ``name`` exists."
+        """Return ``True`` if data with key ``name`` exists.
+
+        """
         pass
 
     @abstractmethod
@@ -344,6 +359,8 @@ class Stash(ABC):
     def __getitem__(self, key):
         exists = self.exists(key)
         item = self.load(key)
+        if item is None:
+            raise KeyError(key)
         if not exists:
             self.dump(key, item)
         return item
@@ -390,6 +407,12 @@ class DelegateStash(CloseableStash):
     def load(self, name: str):
         if self.delegate is not None:
             return self.delegate.load(name)
+
+    def get(self, name: str, default=None):
+        if self.delegate is None:
+            return super(DelegateStash, self).get(name, default)
+        else:
+            return self.delegate.get(name, default)
 
     def exists(self, name: str):
         if self.delegate is not None:
@@ -501,6 +524,9 @@ class DictionaryStash(DelegateStash):
 
     def load(self, name: str):
         return self.data[name]
+
+    def get(self, name: str, default=None):
+        return self.data.get(name, default)
 
     def exists(self, name: str):
         return name in self.data
