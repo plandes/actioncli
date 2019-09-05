@@ -64,7 +64,7 @@ class time(object):
             msg = msg.format(**locals)
         except Exception as e:
             time_logger.error(e)
-        msgstr = f'{msg} finished in {elapse:.1f}s'
+        msgstr = f'{msg} in {elapse:.1f}s'
         if self.logger is not None:
             self.logger.log(self.level, msgstr)
         else:

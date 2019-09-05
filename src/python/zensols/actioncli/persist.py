@@ -496,9 +496,8 @@ class FactoryStash(PreemptiveStash):
         self.factory = factory
 
     def load(self, name: str):
-        if self.exists(name):
-            item = super(FactoryStash, self).load(name)
-        else:
+        item = super(FactoryStash, self).load(name)
+        if item is None:
             self._reset_has_data()
             item = self.factory.load(name)
         return item
@@ -523,7 +522,7 @@ class DictionaryStash(DelegateStash):
             self.data = data
 
     def load(self, name: str):
-        return self.data[name]
+        return self.data.get(name)
 
     def get(self, name: str, default=None):
         return self.data.get(name, default)
