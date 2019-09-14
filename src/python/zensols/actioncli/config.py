@@ -158,6 +158,12 @@ class Config(Configurable):
         return configparser.ConfigParser(defaults=self.create_defaults)
 
     @property
+    def content(self):
+        "Return the contents of the configuration file."
+        with open(os.path.expanduser(self.config_file)) as f:
+            return f.read()
+
+    @property
     def parser(self):
         "Load the configuration file."
         if not hasattr(self, '_conf'):
@@ -168,9 +174,9 @@ class Config(Configurable):
                 conf.read(os.path.expanduser(cfile))
             else:
                 if self.robust:
-                    logger.debug('no default config file %s--skipping' % cfile)
+                    logger.debug(f'no default config file {cfile}--skipping')
                 else:
-                    raise IOError('no such file: %s' % cfile)
+                    raise IOError('no such file: {cfile}')
                 conf = None
             self._conf = conf
         return self._conf
