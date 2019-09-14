@@ -35,3 +35,7 @@ testtpopulate:
 .PHONY:	testfactory
 testfactory:
 	make PY_SRC_TEST_PKGS=configfactory_test test
+
+.PHONY:	testtime
+testtime:
+	make PY_SRC_TEST_PKGS=time_test test

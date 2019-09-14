@@ -6,6 +6,10 @@ __author__ = 'Paul Landes'
 import logging
 import inspect
 import time as tm
+from functools import wraps
+import errno
+import os
+import signal
 
 time_logger = logging.getLogger(__name__)
 
@@ -69,3 +73,88 @@ class time(object):
             self.logger.log(self.level, msgstr)
         else:
             print(msgstr)
+
+
+class TimeoutError(Exception):
+    pass
+
+
+TIMEOUT_DEFAULT = 10
+
+
+def timeout(seconds=TIMEOUT_DEFAULT, error_message=os.strerror(errno.ETIME)):
+    """This creates a decorator called @timeout that can be applied to any long
+    running functions.
+
+    So, in your application code, you can use the decorator like so:
+
+        from timeout import timeout
+
+        # Timeout a long running function with the default expiry of
+        # TIMEOUT_DEFAULT seconds.
+        @timeout
+        def long_running_function1():
+
+    :see https://stackoverflow.com/questions/2281850/timeout-function-if-it-takes-too-long-to-finish:
+    :author David Narayan
+
+    """
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wraps(func)(wrapper)
+
+    return decorator
+
+
+class timeprotect(object):
+    """Invokes a block and bails if not completed in a specified number of seconds.
+
+    :param seconds: the number of seconds to wait
+
+    :param timeout_handler: function that takes a single argument, which is
+                            this ``timeprotect`` object instance; if ``None``,
+                            then nothing is done if the block times out
+
+    :param context: an object accessible from the ``timeout_hander`` via
+                          ``self``, which defaults to ``None``
+
+    :see timeout:
+
+    """
+    def __init__(self, seconds=TIMEOUT_DEFAULT, timeout_handler=None,
+                 context=None, error_message=os.strerror(errno.ETIME)):
+        self.seconds = seconds
+        self.timeout_handler = timeout_handler
+        self.context = context
+        self.error_message = error_message
+        self.timeout_handler_exception = None
+
+    def __enter__(self):
+        def _handle_timeout(signum, frame):
+            signal.alarm(0)
+            if self.timeout_handler is not None:
+                try:
+                    self.timeout_handler(self)
+                except Exception as e:
+                    time_logger.exception(
+                        f'could not recover from timeout handler: {e}')
+                    self.timeout_handler_exception = e
+            raise TimeoutError(self.error_message)
+
+        signal.signal(signal.SIGALRM, _handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, cls, value, traceback):
+        signal.alarm(0)
+        return True
