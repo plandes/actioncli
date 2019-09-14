@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Added
 - More Pythonic `dict` semantics for `Stash` classes.  Now they have the same
   API as a Python `dict`.
+- Time out functionality: decorator and context managers to time out blocks and
+  functions/methods.
+- Minor configuration features.
 
 ## Changed
 - Logging switches affect *only* the applications module for defined CLI
