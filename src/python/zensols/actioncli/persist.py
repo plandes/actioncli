@@ -467,7 +467,15 @@ class PreemptiveStash(DelegateStash):
     """
     @property
     def has_data(self):
-        """Return whether or not the stash has any data available or not."""
+        """Return whether or not the stash has any data available or not.
+
+        """
+        return self._calculate_has_data()
+
+    def _calculate_has_data(self):
+        """Return ``True`` if the delegate has keys.
+
+        """
         if not hasattr(self, '_has_data'):
             try:
                 next(iter(self.delegate.keys()))
@@ -477,12 +485,16 @@ class PreemptiveStash(DelegateStash):
         return self._has_data
 
     def _reset_has_data(self):
-        """Reset the state of whether the stash has data or not."""
+        """Reset the state of whether the stash has data or not.
+
+        """
         if hasattr(self, '_has_data'):
             delattr(self, '_has_data')
 
     def _set_has_data(self, has_data=True):
-        """Set the state of whether the stash has data or not."""
+        """Set the state of whether the stash has data or not.
+
+        """
         self._has_data = has_data
 
 
@@ -490,7 +502,7 @@ class FactoryStash(PreemptiveStash):
     """A stash that defers to creation of new items to another ``factory`` stash.
 
     """
-    def __init__(self, delegate, factory):
+    def __init__(self, delegate, factory, enable_preemptive=True):
         """Initialize.
 
         :param delegate: the stash used for persistence
@@ -500,6 +512,13 @@ class FactoryStash(PreemptiveStash):
         """
         super(FactoryStash, self).__init__(delegate)
         self.factory = factory
+        self.enable_preemptive = enable_preemptive
+
+    def _calculate_has_data(self):
+        if self.enable_preemptive:
+            return super(FactoryStash, self)._calculate_has_data()
+        else:
+            return False
 
     def load(self, name: str):
         item = super(FactoryStash, self).load(name)
