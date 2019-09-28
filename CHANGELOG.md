@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [1.0.18] - 2019-09-28
 ## Added
 - More Pythonic `dict` semantics for `Stash` classes.  Now they have the same
   API as a Python `dict`.
@@ -161,7 +163,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.17...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.18...HEAD
+[1.0.18]: https://github.com/plandes/actioncli/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/plandes/actioncli/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/plandes/actioncli/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/plandes/actioncli/compare/v1.0.14...v1.0.15
