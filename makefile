@@ -10,32 +10,32 @@ include ./zenbuild/main.mk
 
 .PHONY:	runexecout
 runexecout:
-	make PY_SRC_TEST_PKGS=executor_test.TestExecutor.run_sleep_out test
+	make PY_SRC_TEST_PKGS=test_executor.TestExecutor.run_sleep_out test
 
 .PHONY:	testclieenv
 testclieenv:
-	make PY_SRC_TEST_PKGS=actioncli_test.TestActionCli.test_env_conf_cli_env test
+	make PY_SRC_TEST_PKGS=test_actioncli.TestActionCli.test_env_conf_cli_env test
 
 .PHONY:	testconfig
 testconfig:
-	make PY_SRC_TEST_PKGS=config_test.TestConfig test
+	make PY_SRC_TEST_PKGS=test_config.TestConfig test
 
 .PHONY:	testpersist
 testpersist:
-	make PY_SRC_TEST_PKGS=persist_test.TestStash test
+	make PY_SRC_TEST_PKGS=test_persist.TestStash test
 
 .PHONY:	testtask
 testtask:
-	make PY_SRC_TEST_PKGS=task_test.TestPersistTask test
+	make PY_SRC_TEST_PKGS=test_task.TestPersistTask test
 
 .PHONY:	testtpopulate
 testtpopulate:
-	make PY_SRC_TEST_PKGS=populate_test test
+	make PY_SRC_TEST_PKGS=test_populate test
 
 .PHONY:	testfactory
 testfactory:
-	make PY_SRC_TEST_PKGS=configfactory_test test
+	make PY_SRC_TEST_PKGS=test_configfactory test
 
 .PHONY:	testtime
 testtime:
-	make PY_SRC_TEST_PKGS=time_test test
+	make PY_SRC_TEST_PKGS=test_time test

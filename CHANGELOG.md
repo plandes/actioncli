@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   lot on the verbosity of the logging.  If no package is defined, the old
   default behavior is used.
 - More `dict` semantics for stashes.
+- Upgrade zenbuild.
 
 
 ## [1.0.17] - 2019-07-31
