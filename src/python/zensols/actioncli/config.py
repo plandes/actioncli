@@ -176,7 +176,7 @@ class Config(Configurable):
                 if self.robust:
                     logger.debug(f'no default config file {cfile}--skipping')
                 else:
-                    raise IOError('no such file: {cfile}')
+                    raise IOError(f'no such file: {cfile}')
                 conf = None
             self._conf = conf
         return self._conf
