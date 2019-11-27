@@ -279,6 +279,38 @@ class resource(object):
         return wrapped
 
 
+class Chunker(object):
+    """An iterable that chunks any other iterable in to chunks.  Each element
+    returned is a list of elemnets of the given size or smaller.  That element
+    that might be smaller is the remainer of the iterable once it is exhausted.
+
+    """
+    def __init__(self, iterable: iter, size: int):
+        """Initialize the chunker.
+
+        :param iterable: any iterable object
+        :param size: the size of each chunk
+
+        """
+        self.iterable = iterable
+        self.size = size
+
+    def __iter__(self):
+        self.iterable_session = iter(self.iterable)
+        return self
+
+    def __next__(self):
+        ds = []
+        for _ in range(self.size):
+            try:
+                ds.append(next(self.iterable_session))
+            except StopIteration:
+                break
+        if len(ds) == 0:
+            raise StopIteration()
+        return ds
+
+
 # collections
 class Stash(ABC):
     """Pure virtual classes that represents CRUDing data that uses ``dict``
@@ -348,9 +380,7 @@ class Stash(ABC):
 
     def key_groups(self, n):
         "Return an iterable of groups of keys, each of size at least ``n``."
-        klst = tuple(self.keys())
-        for i in range(0, len(klst), n):
-            yield klst[i:i+n]
+        return Chunker(self.keys(), n)
 
     def values(self):
         """Return the values in the hash.

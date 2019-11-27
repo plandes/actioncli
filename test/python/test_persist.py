@@ -412,11 +412,11 @@ class TestStash(unittest.TestCase):
     def test_key_group(self):
         stash = RangeStash(5)
         self.assertEqual(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4)), tuple(stash))
-        self.assertEqual(((0, 1, 2), (3, 4)), tuple(stash.key_groups(3)))
-        self.assertEqual(((0, 1), (2, 3), (4,)), tuple(stash.key_groups(2)))
-        self.assertEqual(((0, 1, 2, 3), (4,)), tuple(stash.key_groups(4)))
-        self.assertEqual(((0, 1, 2, 3, 4,),), tuple(stash.key_groups(5)))
-        self.assertEqual(((0, 1, 2, 3, 4,),), tuple(stash.key_groups(6)))
+        self.assertEqual(([0, 1, 2], [3, 4]), tuple(stash.key_groups(3)))
+        self.assertEqual(([0, 1], [2, 3], [4,]), tuple(stash.key_groups(2)))
+        self.assertEqual(([0, 1, 2, 3], [4,]), tuple(stash.key_groups(4)))
+        self.assertEqual(([0, 1, 2, 3, 4,],), tuple(stash.key_groups(5)))
+        self.assertEqual(([0, 1, 2, 3, 4,],), tuple(stash.key_groups(6)))
 
     def test_cache_stash(self):
         stash = CacheStash(RangeStash(5))
