@@ -1,7 +1,16 @@
 import logging
 import math
 from multiprocessing import Pool
-from zensols.actioncli import Stash
+from dataclasses import dataclass
+from abc import ABCMeta, abstractmethod
+from zensols.actioncli.time import time
+from zensols.actioncli import (
+    Stash,
+    Configurable,
+    PreemptiveStash,
+    StashFactory,
+    chunks,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,3 +60,143 @@ class FunctionStashMapReducer(StashMapReducer):
     def map_func(*args, **kwargs):
         mr = FunctionStashMapReducer(*args, **kwargs)
         return mr.map()
+
+
+@dataclass
+class ChunkProcessor(object):
+    """Represents a chunk of work created by the parent and processed on the child.
+    
+    :param config: the application context configuration used to create the
+                   parent stash
+    :param name: the name of the parent stash used to create the chunk, and
+                 subsequently process this chunk
+    :param chunk_id: the nth chunk
+    :param data: the data created by the parent to be processed
+
+    """
+    config: Configurable
+    name: str
+    chunk_id: int
+    data: object
+
+    def _create_stash(self):
+        return StashFactory(self.config).instance(self.name)
+
+    def process(self):
+        """Create the stash used to process the data, then persisted in the stash.
+
+        """
+        stash = self._create_stash()
+        cnt = 0
+        for id, inst in stash._process(self.data):
+            stash.delegate.dump(id, inst)
+            cnt += 1
+        return cnt
+
+    def __str__(self):
+        return f'{self.name}: data: {type(self.data)}'
+
+
+class MultiProccessStash(PreemptiveStash, metaclass=ABCMeta):
+    """A stash that forks processes to process data in a distributed fashion.  The
+    stash is typically created by a ``StashFactory`` in the child process.
+    Work is chunked (grouped) and then sent to child processes.  In each, a new
+    instance of this same stash is created using the ``StashFactory`` and then
+    an abstract method is called to dump the data.
+
+    To implement, the ``_create_chunks`` and ``_process`` methods must be
+    implemented.
+
+    """
+    def __init__(self, config: Configurable, name: str, delegate: Stash,
+                 chunk_size: int, workers: int):
+        """Initialize the stash from a ``StashFactory``.
+
+        This class is abstract and subclasses is are usually be created by a
+        ``StashFactory`` since it needs to be able to be created by the factory
+        in the child process.
+
+        :param config: the application context configuration used to create the
+                       parent stash
+        :param delegate: the stash in charge of the actual persistance
+        :param name: the name of the stash in the configuration, which is
+                     created by a ``StashFactory``
+
+        :param chunk_size: the size of each group of data sent to the child
+                           process to be handled; in some cases the child
+                           process will get a chunk of data smaller than this
+                           (the last) but never more
+
+        """
+        super(MultiProccessStash, self).__init__(delegate)
+        self.config = config
+        self.name = name
+        self.chunk_size = chunk_size
+        self.workers = workers
+
+    @abstractmethod
+    def _create_data(self) -> list:
+        """Create data in the parent process to be processed in the child process(es)
+        in chunks.
+
+        """
+        pass
+
+    @abstractmethod
+    def _process(self, chunks: list) -> int:
+        """Process a chunk of data, each created by ``_create_data`` and then grouped.
+
+        """
+        pass
+
+    @staticmethod
+    def _process_work(chunk: ChunkProcessor) -> int:
+        """Process a chunk of data in the child process that was created by the parent
+        process.
+
+        """
+        return chunk.process()
+
+    def _create_chunk_processor(self, chunk_id: int, data: object):
+        """Factory method to create the ``ChunkProcessor`` instance.
+
+        """
+        return ChunkProcessor(self.config, self.name, chunk_id, data)
+
+    def _spawn_work(self) -> int:
+        """Chunks and invokes a multiprocessing pool to invokes processing on the
+        children.
+
+        """
+        data = map(lambda x: self._create_chunk_processor(*x),
+                   enumerate(chunks(self._create_data(), self.chunk_size)))
+        logger.debug(f'spawning {self.chunk_size} chunks across ' +
+                     f'{self.workers} workers')
+        with Pool(self.workers) as p:
+            with time('processed chunks'):
+                cnt = sum(p.map(self.__class__._process_work, data))
+        return cnt
+
+    def prime(self):
+        """If the delegate stash data does not exist, use this implementation to
+        generate the data and process in children processes.
+
+        """
+        has_data = self.has_data
+        logger.debug(f'asserting data: {has_data}')
+        if not has_data:
+            with time('spawining work in {self}'):
+                self._spawn_work()
+            self._reset_has_data()
+
+    def get(self, name: str, default=None):
+        self.prime()
+        return super(MultiProccessStash, self).get(name, default)
+
+    def load(self, name: str):
+        self.prime()
+        return super(MultiProccessStash, self).load(name)
+
+    def keys(self):
+        self.prime()
+        return super(MultiProccessStash, self).keys()

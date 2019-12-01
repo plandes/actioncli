@@ -74,7 +74,8 @@ class ClassImporter(object):
             msg = f'could not instantiate {cls}({args}, {kwargs})'
             logger.error(msg, e)
             raise e
-        logger.debug(f'inst: {inst}')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'inst: {inst}')
         return inst
 
     def set_log_level(self, level=logging.INFO):

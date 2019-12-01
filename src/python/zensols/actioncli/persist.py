@@ -7,7 +7,7 @@ import pickle
 from time import time
 from pathlib import Path
 import shelve as sh
-from abc import abstractmethod, ABC
+from abc import abstractmethod, ABC, ABCMeta
 
 logger = logging.getLogger(__name__)
 
@@ -279,13 +279,13 @@ class resource(object):
         return wrapped
 
 
-class Chunker(object):
+class chunks(object):
     """An iterable that chunks any other iterable in to chunks.  Each element
     returned is a list of elemnets of the given size or smaller.  That element
     that might be smaller is the remainer of the iterable once it is exhausted.
 
     """
-    def __init__(self, iterable: iter, size: int):
+    def __init__(self, iterable: iter, size: int, enum: bool = False):
         """Initialize the chunker.
 
         :param iterable: any iterable object
@@ -294,6 +294,7 @@ class Chunker(object):
         """
         self.iterable = iterable
         self.size = size
+        self.enum = enum
 
     def __iter__(self):
         self.iterable_session = iter(self.iterable)
@@ -301,11 +302,14 @@ class Chunker(object):
 
     def __next__(self):
         ds = []
-        for _ in range(self.size):
+        for e in range(self.size):
             try:
-                ds.append(next(self.iterable_session))
+                obj = next(self.iterable_session)
             except StopIteration:
                 break
+            if self.enum:
+                obj = (e, obj)
+            ds.append(obj)
         if len(ds) == 0:
             raise StopIteration()
         return ds
@@ -380,7 +384,7 @@ class Stash(ABC):
 
     def key_groups(self, n):
         "Return an iterable of groups of keys, each of size at least ``n``."
-        return Chunker(self.keys(), n)
+        return chunks(self.keys(), n)
 
     def values(self):
         """Return the values in the hash.
@@ -427,7 +431,7 @@ class CloseableStash(Stash):
         pass
 
 
-class DelegateStash(CloseableStash):
+class DelegateStash(CloseableStash, metaclass=ABCMeta):
     """Delegate pattern.  It can also be used as a no-op if no delegate is given.
 
     A minimum functioning implementation needs the ``load`` and ``keys``
@@ -462,12 +466,17 @@ class DelegateStash(CloseableStash):
 
     def delete(self, name=None):
         if self.delegate is not None:
-            return self.delegate.delete(name)
+            self.delegate.delete(name)
 
     def keys(self):
         if self.delegate is not None:
             return self.delegate.keys()
         return ()
+
+    def clear(self):
+        super(DelegateStash, self).clear()
+        if self.delegate is not None:
+            self.delegate.clear()
 
     def close(self):
         if self.delegate is not None:
@@ -527,6 +536,10 @@ class PreemptiveStash(DelegateStash):
         """
         self._has_data = has_data
 
+    def clear(self):
+        super(PreemptiveStash, self).clear()
+        self._reset_has_data()
+
 
 class FactoryStash(PreemptiveStash):
     """A stash that defers to creation of new items to another ``factory`` stash.
@@ -544,7 +557,7 @@ class FactoryStash(PreemptiveStash):
         self.factory = factory
         self.enable_preemptive = enable_preemptive
 
-    def _calculate_has_data(self):
+    def _calculate_has_data(self) -> bool:
         if self.enable_preemptive:
             return super(FactoryStash, self)._calculate_has_data()
         else:
@@ -557,7 +570,7 @@ class FactoryStash(PreemptiveStash):
             item = self.factory.load(name)
         return item
 
-    def keys(self):
+    def keys(self) -> (list, str):
         if self.has_data:
             ks = super(FactoryStash, self).keys()
         else:
@@ -571,10 +584,15 @@ class DictionaryStash(DelegateStash):
 
     """
     def __init__(self, data: dict=None):
+        super(DictionaryStash, self).__init__()
         if data is None:
-            self.data = {}
+            self._data = {}
         else:
-            self.data = data
+            self._data = data
+
+    @property
+    def data(self):
+        return self._data
 
     def load(self, name: str):
         return self.data.get(name)
@@ -594,6 +612,10 @@ class DictionaryStash(DelegateStash):
     def keys(self):
         return self.data.keys()
 
+    def clear(self):
+        self.data.clear()
+        super(DictionaryStash, self).clear()
+
     def __getitem__(self, key):
         return self.data[key]
 
@@ -602,12 +624,21 @@ class CacheStash(DelegateStash):
     """Provide a dictionary based caching based stash.
 
     """
-    def __init__(self, delegate, cache_stash=None):
+    def __init__(self, delegate, cache_stash=None, read_only=False):
+        """Initialize.
+
+        :param delegate: the underlying persistence stash
+        :param cache_stash: a stash used for caching (defaults to
+                            ``DictionaryStash``)
+        :param read_only: if ``True``, make no changes to ``delegate``
+
+        """
         super(CacheStash, self).__init__(delegate)
         if cache_stash is None:
             self.cache_stash = DictionaryStash()
         else:
             self.cache_stash = cache_stash
+        self.read_only = read_only
 
     def load(self, name: str):
         if self.cache_stash.exists(name):
@@ -623,7 +654,13 @@ class CacheStash(DelegateStash):
     def delete(self, name=None):
         if self.cache_stash.exists(name):
             self.cache_stash.delete(name)
-        return self.delegate.delete(name)
+        if not self.read_only:
+            self.delegate.delete(name)
+
+    def clear(self):
+        if not self.read_only:
+            super(CacheStash, self).clear()
+        self.cache_stash.clear()
 
 
 class DirectoryStash(Stash):

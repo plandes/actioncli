@@ -74,7 +74,7 @@ class ConfAppCommandLine(OneConfPerActionOptionsCli):
 
 class TestHelpFormatter(unittest.TestCase):
     HELP = """\
-Usage: python3 -m unittest <list|backupreallylong|info|mount|umount> [options]
+Usage: python -m unittest <list|backupreallylong|info|mount|umount> [options]
 
 Options:
   --version             show program's version number and exit

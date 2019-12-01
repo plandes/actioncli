@@ -39,3 +39,7 @@ testfactory:
 .PHONY:	testtime
 testtime:
 	make PY_SRC_TEST_PKGS=test_time test
+
+.PHONY:	testchunker
+testchunker:
+	make PY_SRC_TEST_PKGS=test_chunker test
