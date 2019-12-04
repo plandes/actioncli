@@ -90,30 +90,25 @@ class ClassImporter(object):
 
 class ConfigFactory(object):
     """Creates new instances of classes and configures them given data in a
-    configuration ``Config`` instance.
+    configuration ``Configurable`` instance.
 
-    :param config: an instance of ``Configurable``
-    :param pattern: the pattern of the section/name identifier to get kwargs to
-        initialize the new instance of the object
     """
     def __init__(self, config: Configurable, pattern='{name}',
                  config_param_name='config', name_param_name='name',
                  default_name='default'):
-        """Initialize.
+        """Initialize a new factory instance.
 
         :param config: the configuration used to create the instance; all data
-            from the corresponding section is given to the ``__init__`` method
-
+                       from the corresponding section is given to the
+                       ``__init__`` method
         :param pattern: section pattern used to find the values given to the
-        ``__init__`` method
-
+                        ``__init__`` method
         :param config_param_name: the ``__init__`` parameter name used for the
-            configuration object given to the factory's ``instance`` method;
-            defaults to ``config``
-
+                                  configuration object given to the factory's
+                                  ``instance`` method; defaults to ``config``
         :param config_param_name: the ``__init__`` parameter name used for the
-            instance name given to the factory's ``instance`` method; defaults
-            to ``name``
+                                  instance name given to the factory's
+                                  ``instance`` method; defaults to ``name``
 
         """
         self.config = config
@@ -127,13 +122,14 @@ class ConfigFactory(object):
         """Register a class with the factory.
 
         :param instance_class: the class to register with the factory (not a
-            string)
+                               string)
         :param name: the name to use as the key for instance class lookups;
-            defaults to the name of the class
+                     defaults to the name of the class
 
         """
         if name is None:
             name = instance_class.__name__
+        logger.debug(f'registering: {instance_class} for {cls} -> {name}')
         cls.INSTANCE_CLASSES[name] = instance_class
 
     def _find_class(self, class_name):
@@ -142,6 +138,9 @@ class ConfigFactory(object):
         classes.update(globals())
         classes.update(self.INSTANCE_CLASSES)
         logger.debug(f'looking up class: {class_name}')
+        if class_name not in classes:
+            raise ValueError(
+                f'class {class_name} is not registered in factory {self}')
         cls = classes[class_name]
         logger.debug(f'found class: {cls}')
         return cls

@@ -1,4 +1,10 @@
+"""Contains general purpose persistence library classes.
+
+"""
+__author__ = 'Paul Landes'
+
 import logging
+import sys
 import re
 import itertools as it
 import parse
@@ -96,8 +102,9 @@ class PersistedWork(object):
     def _do_work(self, *argv, **kwargs):
         t0 = time()
         obj = self.__do_work__(*argv, **kwargs)
-        self._info('created work in {:2f}s, saving to {}'.format(
-            (time() - t0), self.path))
+        if logger.isEnabledFor(logging.INFO):
+            self._info('created work in {:2f}s, saving to {}'.format(
+                (time() - t0), self.path))
         return obj
 
     def _load_or_create(self, *argv, **kwargs):
@@ -117,6 +124,11 @@ class PersistedWork(object):
         return obj
 
     def set(self, obj):
+        """Set the contents of the object on the owner as if it were persisted from the
+        source.  If this is a global cached instance, then add it to global
+        memory.
+
+        """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f'saving in memory value {type(obj)}')
         vname = self.varname
@@ -171,6 +183,51 @@ class PersistedWork(object):
         """
         return self.worker(*argv, **kwargs)
 
+    def write(self, writer=sys.stdout, indent=0, include_content=False):
+        sp = ' ' * indent
+        writer.write(f'{sp}{self}:\n')
+        sp = ' ' * (indent + 1)
+        writer.write(f'{sp}global: {self.cache_global}\n')
+        writer.write(f'{sp}transient: {self.transient}\n')
+        writer.write(f'{sp}type: {type(self())}\n')
+        if include_content:
+            writer.write(f'{sp}content: {self()}\n')
+
+    def __str__(self):
+        return self.varname
+
+
+class PersistableContainerMetadata(object):
+    def __init__(self, container):
+        self.container = container
+
+    @property
+    def persisted(self):
+        """Return all ``PersistedWork`` instances on this object as a ``dict``.
+
+        """
+        pws = {}
+        for k, v in self.container.__dict__.items():
+            if isinstance(v, PersistedWork):
+                pws[k] = v
+        return pws
+
+    def write(self, writer=sys.stdout, indent=0, include_content=False):
+        sp = ' ' * indent
+        for k, v in self.persisted.items():
+            if isinstance(v, PersistedWork):
+                v.write(writer, indent, include_content)
+            else:
+                v = f'<{v.__class__.name}>'
+                writer.write(f'{sp}{k} => {v}\n')
+
+    def clear(self):
+        """Clear all ``PersistedWork`` instances on this object.
+
+        """
+        for pw in self.persisted.values():
+            pw.clear()
+
 
 class PersistableContainer(object):
     """Classes can extend this that want to persist ``PersistableWork`` instances,
@@ -202,16 +259,11 @@ class PersistableContainer(object):
             if isinstance(v, PersistedWork):
                 setattr(v, 'owner', self)
 
-    def _get_all_persisted_works(self):
-        pws = {}
-        for k, v in self.__dict__.items():
-            if isinstance(v, PersistedWork):
-                pws[k] = v
-        return pws
+    def _get_persistable_metadata(self) -> PersistableContainerMetadata:
+        """Return the metadata for this container.
 
-    def _clear_all_persisted_works(self):
-        for pw in self._get_all_persisted_works().values():
-            pw.clear()
+        """
+        return PersistableContainerMetadata(self)
 
 
 class persisted(object):
