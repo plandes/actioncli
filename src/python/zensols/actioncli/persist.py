@@ -40,7 +40,8 @@ class PersistedWork(object):
             instances but not classes
 
         """
-        logger.debug('pw inst: path={}, global={}'.format(path, cache_global))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('pw inst: path={}, global={}'.format(path, cache_global))
         self.owner = owner
         self.cache_global = cache_global
         self.transient = transient
@@ -57,16 +58,19 @@ class PersistedWork(object):
         self.varname = f'_{cstr}_{fname}_pwvinst'
 
     def _info(self, msg, *args):
-        logger.debug(self.varname + ': ' + msg, *args)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(self.varname + ': ' + msg, *args)
 
     def clear_global(self):
         """Clear only any cached global data.
 
         """
         vname = self.varname
-        logger.debug(f'global clearning {vname}')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'global clearning {vname}')
         if vname in globals():
-            logger.debug('removing global instance var: {}'.format(vname))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('removing global instance var: {}'.format(vname))
             del globals()[vname]
 
     def clear(self):
@@ -77,10 +81,15 @@ class PersistedWork(object):
         """
         vname = self.varname
         if self.path.exists():
-            logger.debug('deleting cached work: {}'.format(self.path))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('deleting cached work: {}'.format(self.path))
             self.path.unlink()
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'owner exists: {self.owner is not None} ' +
+                         f'has {vname}: {hasattr(self.owner, vname)}')
         if self.owner is not None and hasattr(self.owner, vname):
-            logger.debug('removing instance var: {}'.format(vname))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('removing instance var: {}'.format(vname))
             delattr(self.owner, vname)
         self.clear_global()
 
@@ -108,7 +117,8 @@ class PersistedWork(object):
         return obj
 
     def set(self, obj):
-        logger.debug(f'saving in memory value {type(obj)}')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'saving in memory value {type(obj)}')
         vname = self.varname
         setattr(self.owner, vname, obj)
         if self.cache_global:
@@ -134,13 +144,16 @@ class PersistedWork(object):
         """
         vname = self.varname
         obj = None
-        logger.debug('call with vname: {}'.format(vname))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('call with vname: {}'.format(vname))
         if self.owner is not None and hasattr(self.owner, vname):
-            logger.debug('found in instance')
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('found in instance')
             obj = getattr(self.owner, vname)
         if obj is None and self.cache_global:
             if vname in globals():
-                logger.debug('found in globals')
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug('found in globals')
                 obj = globals()[vname]
         if obj is None:
             if self.use_disk:
@@ -168,7 +181,8 @@ class PersistableContainer(object):
         state = copy(self.__dict__)
         removes = []
         for k, v in state.items():
-            logger.debug(f'container get state: {k} => {v}')
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f'container get state: {k} => {type(v)}')
             if isinstance(v, PersistedWork):
                 if v.transient:
                     removes.append(v.varname)
@@ -183,9 +197,21 @@ class PersistableContainer(object):
         """
         self.__dict__.update(state)
         for k, v in state.items():
-            logger.debug(f'container set state: {k} => {v}')
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f'container set state: {k} => {type(v)}')
             if isinstance(v, PersistedWork):
                 setattr(v, 'owner', self)
+
+    def _get_all_persisted_works(self):
+        pws = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, PersistedWork):
+                pws[k] = v
+        return pws
+
+    def _clear_all_persisted_works(self):
+        for pw in self._get_all_persisted_works().values():
+            pw.clear()
 
 
 class persisted(object):
