@@ -1,4 +1,6 @@
 import logging
+from abc import ABC, abstractmethod
+from typing import Dict
 import inspect
 import importlib
 import re
@@ -10,6 +12,43 @@ from zensols.actioncli import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ClassResolver(ABC):
+    """Used to resolve a class from a string.
+
+    """
+    def find_class(self, class_name: str) -> type:
+        """Return a class given the name of the class.
+
+        :param class_name: represents the class name, which might or might not
+                           have the module as part of that name
+
+        """
+        pass
+
+
+class DictionaryClassResolver(ClassResolver):
+    """Resolve a class name from a list of registered class names without the
+    module part.  This is used with the ``register`` method on
+    ``ConfigFactory``.
+
+    :see: ConfigFactory.register
+    """
+    def __init__(self, instance_classes: Dict[str, type]):
+        self.instance_classes = instance_classes
+
+    def find_class(self, class_name):
+        classes = {}
+        classes.update(globals())
+        classes.update(self.instance_classes)
+        logger.debug(f'looking up class: {class_name}')
+        if class_name not in classes:
+            raise ValueError(
+                f'class {class_name} is not registered in factory {self}')
+        cls = classes[class_name]
+        logger.debug(f'found class: {cls}')
+        return cls
 
 
 class ClassImporter(object):
@@ -32,8 +71,8 @@ class ClassImporter(object):
 
     def parse_module_class(self):
         """Parse the module and class name part of the fully qualifed class name.
-
         """
+
         cname = self.class_name
         match = re.match(self.CLASS_REGEX, cname)
         if not match:
@@ -52,7 +91,7 @@ class ClassImporter(object):
         logger.debug(f'pkg: {pkg}, class: {cname}')
         pkg = pkg.split('.')
         mod = reduce(lambda m, n: getattr(m, n), pkg[1:], __import__(pkg[0]))
-        logger.debug(f'mod: {mod}')
+        logger.debug(f'mod: {mod}, reloading: {self.reload}')
         if self.reload:
             importlib.reload(mod)
         cls = getattr(mod, cname)
@@ -88,14 +127,30 @@ class ClassImporter(object):
         logging.getLogger(mod).setLevel(level)
 
 
+class ImportClassResolver(ClassResolver):
+    """Resolve a class name from a list of registered class names without the
+    module part.  This is used with the ``register`` method on
+    ``ConfigFactory``.
+
+    :see: ConfigFactory.register
+    """
+    def __init__(self, reload: bool = False):
+        self.reload = reload
+
+    def find_class(self, class_name):
+        class_importer = ClassImporter(class_name, reload=self.reload)
+        return class_importer.get_module_class()[1]
+
+
 class ConfigFactory(object):
     """Creates new instances of classes and configures them given data in a
     configuration ``Configurable`` instance.
 
     """
-    def __init__(self, config: Configurable, pattern='{name}',
-                 config_param_name='config', name_param_name='name',
-                 default_name='default'):
+    def __init__(self, config: Configurable, pattern: str = '{name}',
+                 config_param_name: str = 'config',
+                 name_param_name: str = 'name', default_name: str = 'default',
+                 class_importer: ClassImporter = None):
         """Initialize a new factory instance.
 
         :param config: the configuration used to create the instance; all data
@@ -116,10 +171,15 @@ class ConfigFactory(object):
         self.config_param_name = config_param_name
         self.name_param_name = name_param_name
         self.default_name = default_name
+        if class_importer is None:
+            self.class_importer = DictionaryClassResolver(self.INSTANCE_CLASSES)
+        else:
+            self.class_importer = class_importer
 
     @classmethod
     def register(cls, instance_class, name=None):
-        """Register a class with the factory.
+        """Register a class with the factory.  This method assumes the factory instance
+        was created with a (default) ``DictionaryClassResolver``.
 
         :param instance_class: the class to register with the factory (not a
                                string)
@@ -134,16 +194,7 @@ class ConfigFactory(object):
 
     def _find_class(self, class_name):
         "Resolve the class from the name."
-        classes = {}
-        classes.update(globals())
-        classes.update(self.INSTANCE_CLASSES)
-        logger.debug(f'looking up class: {class_name}')
-        if class_name not in classes:
-            raise ValueError(
-                f'class {class_name} is not registered in factory {self}')
-        cls = classes[class_name]
-        logger.debug(f'found class: {cls}')
-        return cls
+        return self.class_importer.find_class(class_name)
 
     def _class_name_params(self, name):
         "Get the class name and parameters to use for ``__init__``."
@@ -214,6 +265,26 @@ class ConfigFactory(object):
         logger.info(f'created {name} instance of {cls.__name__} ' +
                     f'in {(time() - t0):.2f}s')
         return inst
+
+
+class ImportConfigFactory(ConfigFactory):
+    """Import a class by the fully qualified class name (includes the module).
+
+    This is a convenience class for setting the parent class ``class_importer``
+    parameter.
+
+    """
+    def __init__(self, *args, reload: bool = False, **kwargs):
+        """Initialize the configuration factory.
+
+        :param reload: whether or not to reload the module when resolving the
+                       class, which is useful for debugging in a REPL
+
+        """
+        logger.debug(f'creating import config factory with reload: {reload}')
+        class_importer = ImportClassResolver(reload=reload)
+        super(ImportConfigFactory, self).__init__(
+            *args, **kwargs, class_importer=class_importer)
 
 
 class ConfigChildrenFactory(ConfigFactory):

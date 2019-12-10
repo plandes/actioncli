@@ -183,7 +183,7 @@ class PersistedWork(object):
         """
         return self.worker(*argv, **kwargs)
 
-    def write(self, writer=sys.stdout, indent=0, include_content=False):
+    def pprint(self, writer=sys.stdout, indent=0, include_content=False):
         sp = ' ' * indent
         writer.write(f'{sp}{self}:\n')
         sp = ' ' * (indent + 1)
@@ -212,14 +212,21 @@ class PersistableContainerMetadata(object):
                 pws[k] = v
         return pws
 
-    def write(self, writer=sys.stdout, indent=0, include_content=False):
+    def pprint(self, writer=sys.stdout, indent=0,
+               include_content=False, recursive=False):
         sp = ' ' * indent
-        for k, v in self.persisted.items():
+        spe = ' ' * (indent + 1)
+        for k, v in self.container.__dict__.items():
             if isinstance(v, PersistedWork):
-                v.write(writer, indent, include_content)
+                v.pprint(writer, indent, include_content)
             else:
-                v = f'<{v.__class__.name}>'
-                writer.write(f'{sp}{k} => {v}\n')
+                writer.write(f'{sp}{k}:\n')
+                writer.write(f'{spe}type: {type(v)}\n')
+                if include_content:
+                    writer.write(f'{spe}content: {v}\n')
+            if recursive and isinstance(v, PersistableContainer):
+                cmeta = v._get_persistable_metadata()
+                cmeta.write(writer, indent + 2, include_content, True)
 
     def clear(self):
         """Clear all ``PersistedWork`` instances on this object.
