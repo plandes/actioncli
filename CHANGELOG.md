@@ -8,15 +8,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
-## [1.0.18] - 2019-09-28
+## [1.1.0] - 2019-12-14
 ## Added
+- Multi processing chunked worker that works in the stash/dict paradigm.
+
+### Changed
+- Logging more efficient in tight loop.
+- Minor bugs.
+
+
+## [1.0.18] - 2019-09-28
+### Added
 - More Pythonic `dict` semantics for `Stash` classes.  Now they have the same
   API as a Python `dict`.
 - Time out functionality: decorator and context managers to time out blocks and
   functions/methods.
 - Minor configuration features.
 
-## Changed
+### Changed
 - Logging switches affect *only* the applications module for defined CLI
   packages as apposed to the entire Python logging system.  This cuts down a
   lot on the verbosity of the logging.  If no package is defined, the old
@@ -26,7 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [1.0.17] - 2019-07-31
-## Added
+### Added
 - Robust configuration handling: derived configuration from resource files.
 - Settable base configuration for `zensols.actioncli.Config`.
 - `CacheStash` allows any backing stash.
@@ -164,7 +173,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.0.18...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/plandes/actioncli/compare/v1.0.18...v1.1.0
 [1.0.18]: https://github.com/plandes/actioncli/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/plandes/actioncli/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/plandes/actioncli/compare/v1.0.15...v1.0.16
