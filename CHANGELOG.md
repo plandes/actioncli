@@ -13,6 +13,8 @@ Data classes are now used so Python 3.7 is now a requirement.
 
 ## Added
 - Multi processing chunked worker that works in the stash/dict paradigm.
+- One shot factory stash, which allows creation of a stash from an iterable or
+  callable.
 
 ### Changed
 - Logging more efficient in tight loop.
