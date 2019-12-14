@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [1.1.0] - 2019-12-14
+Data classes are now used so Python 3.7 is now a requirement.
+
 ## Added
 - Multi processing chunked worker that works in the stash/dict paradigm.
 
