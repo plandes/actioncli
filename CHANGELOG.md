@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.1.2] - 2020-01-10
+### Added
+- Command line configuration based class `CommandLineConfig`.
+
+
 ## [1.1.1] - 2019-12-14
 ### Added
 - One shot factory stash, which allows creation of a stash from an iterable or
@@ -181,7 +186,8 @@ Data classes are now used so Python 3.7 is now a requirement.
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/plandes/actioncli/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/plandes/actioncli/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/plandes/actioncli/compare/v1.0.18...v1.1.0
 [1.0.18]: https://github.com/plandes/actioncli/compare/v1.0.17...v1.0.18

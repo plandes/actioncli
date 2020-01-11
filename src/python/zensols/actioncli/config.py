@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 import re
 import configparser
@@ -368,3 +369,41 @@ class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
             logger.debug(f'adding env section {sec}: {k} -> {v}')
             parser.set(sec, k, v)
         return parser
+
+
+class CommandLineConfig(Config, metaclass=ABCMeta):
+    """A configuration object that allows creation by using command line arguments
+    as defaults when the configuration file is missing.
+
+    Sub classes must implement the ``set_defaults`` method.  All defaults set
+    in this method are then created in the default section of the configuration
+    when created with the static method ``from_args``, which is called with the
+    parsed command line arguments (usually from some instance or instance of
+    subclass ``SimpleActionCli``.
+
+    """
+    def __init__(self, *args, **kwargs):
+        super(CommandLineConfig, self).__init__(*args, **kwargs)
+
+    def set_default(self, name: str, value: str, clobber: bool = None):
+        """Set a default value in the ``default`` section of the configuration.
+        """
+        if clobber is not None:
+            self.set_option(name, clobber, self.default_section)
+        elif name not in self.options and value is not None:
+            self.set_option(name, value, self.default_section)
+
+    @abstractmethod
+    def set_defaults(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def from_args(cls, config=None, *args, **kwargs):
+        if config is None:
+            self = cls()
+            self._conf = self._create_config_parser()
+            self.parser.add_section(self.default_section)
+        else:
+            self = config
+        self.set_defaults(*args, **kwargs)
+        return self
