@@ -43,3 +43,7 @@ testtime:
 .PHONY:	testchunker
 testchunker:
 	make PY_SRC_TEST_PKGS=test_chunker test
+
+.PHONY:	testhelpfmt
+testhelpfmt:
+	make PY_SRC_TEST_PKGS=test_help_format.TestHelpFormatter test

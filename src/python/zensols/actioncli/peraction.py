@@ -59,7 +59,12 @@ class PrintActionsOptionParser(OptionParser):
                         short_opt = opt._short_opts[0]
                     if opt._long_opts and len(opt._long_opts) > 0:
                         long_opt = opt._long_opts[0]
-                    otype = ' <{}>'.format(opt.type) if opt.type else ''
+                    if opt.metavar is not None:
+                        otype = ' <{}>'.format(opt.metavar)
+                    elif opt.type is not None:
+                        otype = ' <{}>'.format(opt.type.upper())
+                    else:
+                        otype = ''
                     if len(short_opt) > 0 and len(long_opt) > 0:
                         sep = ', '
                     opt_str = '  {}{}{}{}'.format(

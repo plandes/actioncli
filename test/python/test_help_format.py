@@ -83,17 +83,17 @@ Options:
                         add verbosity to logging
 Actions:
   backupreallylong  Run the backup
-  -d, --dryrun                             dry run to not actually connect, but act like it
-  -n, --sources <string>                   override the sources property in the config
+  -d, --dryrun                                dry run to not actually connect, but act like it
+  -n, --sources <STRING>                      override the sources property in the config
 
   info              Print backup configuration information
 
   mount             Mount all targets
-  -d, --datadir <string>    ~/opt/datadir  the location of the Zotero data directory
+  -d, --datadir <FILE>         ~/opt/datadir  the location of the Zotero data directory
 
   umount            Un-mount all targets
-  -d, --datadir <string>    ~/opt/datadir  the location of the Zotero data directory
-  -o, --outputdir <string>  .              the directory to output the website
+  -d, --datadir <FILE>         ~/opt/datadir  the location of the Zotero data directory
+  -o, --outputdir <DIRECTORY>  .              the directory to output the website
 """
 
     def setUp(self):
