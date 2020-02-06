@@ -1,8 +1,8 @@
+from abc import ABCMeta, abstractmethod
+from dataclasses import dataclass
 import logging
 import math
 from multiprocessing import Pool
-from dataclasses import dataclass
-from abc import ABCMeta, abstractmethod
 from zensols.actioncli.time import time
 from zensols.actioncli import (
     Stash,
@@ -97,7 +97,7 @@ class ChunkProcessor(object):
         return f'{self.name}: data: {type(self.data)}'
 
 
-class MultiProccessStash(PreemptiveStash, metaclass=ABCMeta):
+class MultiProcessStash(PreemptiveStash, metaclass=ABCMeta):
     """A stash that forks processes to process data in a distributed fashion.  The
     stash is typically created by a ``StashFactory`` in the child process.
     Work is chunked (grouped) and then sent to child processes.  In each, a new
@@ -143,7 +143,7 @@ class MultiProccessStash(PreemptiveStash, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _process(self, chunks: list) -> int:
+    def _process(self, chunks: list) -> (iter (str, object)):
         """Process a chunk of data, each created by ``_create_data`` and then grouped.
 
         """

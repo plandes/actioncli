@@ -4,7 +4,7 @@
 __author__ = 'Paul Landes'
 
 import logging
-from typing import List, Callable, Set
+from typing import List, Callable
 from abc import abstractmethod, ABC, ABCMeta
 import sys
 import re
@@ -536,7 +536,7 @@ class DelegateStash(CloseableStash, metaclass=ABCMeta):
             delegate = super(DelegateStash, self).__getattribute__('delegate')
         except AttributeError:
             raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{attr}'; delate not set'")
+                f"'{self.__class__.__name__}' object has no attribute '{attr}'; delegate not set'")
         # try:
         if delegate is not None:
             return delegate.__getattribute__(attr)
@@ -607,6 +607,7 @@ class PreemptiveStash(DelegateStash):
     """Provide support for preemptively creating data in a stash.
 
     """
+
     @property
     def has_data(self):
         """Return whether or not the stash has any data available or not.
@@ -640,7 +641,8 @@ class PreemptiveStash(DelegateStash):
         self._has_data = has_data
 
     def clear(self):
-        super(PreemptiveStash, self).clear()
+        if self._calculate_has_data():
+            super(PreemptiveStash, self).clear()
         self._reset_has_data()
 
 
