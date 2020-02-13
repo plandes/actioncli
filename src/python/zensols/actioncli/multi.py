@@ -128,7 +128,7 @@ class MultiProcessStash(PreemptiveStash, metaclass=ABCMeta):
                            (the last) but never more
 
         """
-        super(MultiProccessStash, self).__init__(delegate)
+        super(MultiProcessStash, self).__init__(delegate)
         self.config = config
         self.name = name
         self.chunk_size = chunk_size
@@ -191,12 +191,12 @@ class MultiProcessStash(PreemptiveStash, metaclass=ABCMeta):
 
     def get(self, name: str, default=None):
         self.prime()
-        return super(MultiProccessStash, self).get(name, default)
+        return super(MultiProcessStash, self).get(name, default)
 
     def load(self, name: str):
         self.prime()
-        return super(MultiProccessStash, self).load(name)
+        return super(MultiProcessStash, self).load(name)
 
     def keys(self):
         self.prime()
-        return super(MultiProccessStash, self).keys()
+        return super(MultiProcessStash, self).keys()
