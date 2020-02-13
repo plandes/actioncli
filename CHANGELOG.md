@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.1.3] - 2020-02-12
+### Added
+- Support for command line option meta-data types.
+
+### Changed
+- Meta data, abstract class structure and name fix for multiprocessing class.
+
+
 ## [1.1.2] - 2020-01-10
 ### Added
 - Command line configuration based class `CommandLineConfig`.
@@ -186,7 +194,8 @@ Data classes are now used so Python 3.7 is now a requirement.
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/plandes/actioncli/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/plandes/actioncli/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/plandes/actioncli/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/plandes/actioncli/compare/v1.0.18...v1.1.0
