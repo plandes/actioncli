@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.1.4] - 2020-02-18
 ### Added
 - Support for more flexible environment configuration.  This includes a
   dictionary environment and section name for configuration.
@@ -199,7 +200,8 @@ Data classes are now used so Python 3.7 is now a requirement.
 - Initial version
 
 
-[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/plandes/actioncli/compare/v1.1.4...HEAD
+[1.1.4]: https://github.com/plandes/actioncli/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/plandes/actioncli/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/plandes/actioncli/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/plandes/actioncli/compare/v1.1.0...v1.1.1
