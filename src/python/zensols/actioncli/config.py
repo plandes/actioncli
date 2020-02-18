@@ -348,10 +348,16 @@ class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
 
     """
 
-    def __init__(self, *args, remove_vars=None, **kwargs):
+    def __init__(self, *args, remove_vars: bool = None,
+                 env: dict = None, env_sec: str = 'env', **kwargs):
         if 'default_expect' not in kwargs:
             kwargs['default_expect'] = True
         self.remove_vars = remove_vars
+        if env is None:
+            env = os.environ
+        else:
+            self.env = env
+        self.env_sec = env_sec
         super(ExtendedInterpolationEnvConfig, self).__init__(*args, **kwargs)
 
     def _munge_default_vars(self, vars):
@@ -363,9 +369,9 @@ class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
 
     def _create_config_parser(self):
         parser = super(ExtendedInterpolationEnvConfig, self)._create_config_parser()
-        sec = 'env'
+        sec = self.env_sec
         parser.add_section(sec)
-        for k, v in os.environ.items():
+        for k, v in self.env.items():
             logger.debug(f'adding env section {sec}: {k} -> {v}')
             parser.set(sec, k, v)
         return parser

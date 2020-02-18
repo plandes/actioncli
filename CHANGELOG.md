@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+### Added
+- Support for more flexible environment configuration.  This includes a
+  dictionary environment and section name for configuration.
+
+
 ## [1.1.3] - 2020-02-12
 ### Added
 - Support for command line option meta-data types.
