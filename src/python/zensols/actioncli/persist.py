@@ -434,7 +434,7 @@ class Stash(ABC):
             return ret
 
     @abstractmethod
-    def exists(self, name: str):
+    def exists(self, name: str) -> bool:
         """Return ``True`` if data with key ``name`` exists.
 
         """
@@ -537,13 +537,8 @@ class DelegateStash(CloseableStash, metaclass=ABCMeta):
         except AttributeError:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{attr}'; delegate not set'")
-        # try:
         if delegate is not None:
             return delegate.__getattribute__(attr)
-        # except AttributeError as e:
-        #     logger.error(f'nested attribute error: {e}')
-        #     raise AttributeError(
-        #         f"'{self.__class__.__name__}' object has no attribute '{attr}'")
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{attr}''")
         
@@ -675,7 +670,7 @@ class FactoryStash(PreemptiveStash):
             item = self.factory.load(name)
         return item
 
-    def keys(self) -> (list, str):
+    def keys(self) -> List[str]:
         if self.has_data:
             ks = super(FactoryStash, self).keys()
         else:
