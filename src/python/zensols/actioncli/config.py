@@ -354,7 +354,7 @@ class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
             kwargs['default_expect'] = True
         self.remove_vars = remove_vars
         if env is None:
-            env = os.environ
+            self.env = os.environ
         else:
             self.env = env
         self.env_sec = env_sec
