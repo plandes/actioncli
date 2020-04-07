@@ -374,6 +374,8 @@ class ExtendedInterpolationEnvConfig(ExtendedInterpolationConfig):
         for k, v in self.env.items():
             logger.debug(f'adding env section {sec}: {k} -> {v}')
             parser.set(sec, k, v)
+        # purify for pickle
+        del self.env
         return parser
 
 
