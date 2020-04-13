@@ -274,6 +274,8 @@ class ImportConfigFactory(ConfigFactory):
     parameter.
 
     """
+    CHILD_REGEXP = re.compile(r'^instance:\s*(.+)$')
+
     def __init__(self, *args, reload: bool = False, **kwargs):
         """Initialize the configuration factory.
 
@@ -285,6 +287,19 @@ class ImportConfigFactory(ConfigFactory):
         class_importer = ImportClassResolver(reload=reload)
         super(ImportConfigFactory, self).__init__(
             *args, **kwargs, class_importer=class_importer)
+
+    def _class_name_params(self, name):
+        class_name, params = super(ImportConfigFactory, self).\
+            _class_name_params(name)
+        insts = {}
+        for k, v in params.items():
+            if isinstance(v, str):
+                m = self.CHILD_REGEXP.match(v)
+                if m:
+                    section = m.group(1)
+                    insts[k] = self.instance(section)
+        params.update(insts)
+        return class_name, params
 
 
 class ConfigChildrenFactory(ConfigFactory):
