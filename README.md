@@ -15,6 +15,13 @@ Features include:
   Specifically, optional configuration and configuration groups.
 
 
+## Deprecated
+
+This project has moved to [zensols.util](https://github.com/plandes/util).  All
+dependencies should move to that project as this repo and all development is
+now frozen.
+
+
 ## Obtaining
 
 The easiest way to obtain this package is via [pip]:
